@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edubase</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-graduation-cap'><path d='M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z'/><path d='M22 10v6'/><path d='M6 12.5V16a6 3 0 0 0 12 0v-3.5'/></svg>" type="image/svg+xml">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- ***** START: USER-PROVIDED STYLE ***** -->
+    <style>
+        /* Set default font */
+        body {
+            font-family: 'Manrope', 'Kantumruy Pro', sans-serif;
+        }
+
+        /* ម៉ូដសម្រាប់ Sticky Note (កិច្ចការ) */
+        .sticky-note {
+            background-color: #fefcbf; /* ពណ៌លឿងស្រាល */
+            border: 1px solid #f0eab2;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            /* ធ្វើឲ្យវាផ្អៀងបន្តិច */
+            transform: rotate(-1deg);
+            transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .sticky-note:hover {
+            transform: rotate(0deg) scale(1.03); /* ត្រឡប់មកត្រង់វិញ និងធំបន្តិច */
+            box-shadow: 0 8px 12px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        /* ម៉ូដសម្រាប់ Sidebar Link ដែលកំពុង Active */
+        .sidebar-link.active {
+            background-color: #0f766e; /* ពណ៌បៃតង (teal-700) */
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(15, 118, 110, 0.3);
+        }
+        
+        /* ម៉ូដសម្រាប់ Modal animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1.0); }
+        }
+
+        /* ซ่อนปุ่ม admin-only ตามค่าเริ่มต้น */
+        /* នេះ​ជា​ចំណុច​សំខាន់​ដែល​លាក់​ប៊ូតុង Admin សម្រាប់ Student */
+        .admin-only {
+            display: none;
+        }
+
+        /* បង្ហាញធាតុ admin-only ពេល role ត្រូវបានកំណត់ដោយ JS */
+        body.admin .admin-only {
+            display: inline-flex; /* ឬ block តាមតម្រូវការ */
+        }
+    </style>
+    <!-- ***** END: USER-PROVIDED STYLE ***** -->
+    
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased">
+
+    <!-- 
+      Global Message Box (for errors/success)
+    -->
+    <div id="message-box" class="hidden fixed top-5 right-5 z-[100] p-4 rounded-lg shadow-lg max-w-sm text-white font-semibold">
+        <!-- Message content goes here -->
+    </div>
+    
+    <!-- 
+      Confirmation Modal (for Deletes)
+    -->
+    <div id="confirmation-modal" class="hidden fixed inset-0 z-[90] bg-gray-900 bg-opacity-70 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-2xl transform transition-all" style="animation: fadeIn 0.2s ease-out;">
+            <h2 id="confirmation-title" class="text-2xl font-bold text-slate-800 mb-4">តើអ្នកប្រាកដទេ?</h2>
+            <p id="confirmation-message" class="text-slate-700 mb-6">តើអ្នកពិតជាចង់លុប?...</p>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" id="confirmation-cancel" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-5 rounded-lg shadow-sm transition duration-300">
+                    បោះបង់ (Cancel)
+                </button>
+                <button type="button" id="confirmation-confirm" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md transition duration-300">
+                    បញ្ជាក់លុប (Delete)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 
+      Main Application Container
+    -->
+    <div id="app-container">
+
+        <!-- 
+          SECTION 1: LOGIN / AUTHENTICATION SCREEN
+        -->
+        <section id="login-screen" class="min-h-screen flex items-center justify-center p-4 bg-slate-100">
+            <div class="w-full max-w-md bg-white p-8 md:p-10 rounded-2xl shadow-xl border border-slate-200">
+
+                <!-- Logo Header -->
+                <div class="flex justify-center items-center mb-8">
+                    <!-- New Logo (Book Open) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-teal-600">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                    </svg>
+                    <span class="text-4xl font-bold ml-3 text-slate-800">Edubase</span>
+                </div>
+                
+                <!-- View Container for Sign In / Sign Up -->
+                <div id="auth-view-container">
+
+                    <!-- View 1: Sign In (Default) -->
+                    <div id="sign-in-view">
+                        <h2 class="text-2xl font-bold text-center text-slate-800 mb-6">ចូលប្រព័ន្ធ (Sign In)</h2>
+                        <form id="login-form">
+                            <div class="mb-4">
+                                <label for="login-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                                <input type="email" id="login-email" class="w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" required>
+                            </div>
+                            <div class="mb-6">
+                                <label for="login-password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                                <input type="password" id="login-password" class="w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" required>
+                            </div>
+                            <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300">
+                                ចូល (Login)
+                            </button>
+                        </form>
+                        
+                        <div class="mt-5 text-center">
+                            <a href="#" id="show-signup-link" class="text-sm font-medium text-teal-600 hover:text-teal-800">មិនទាន់មានគណនី? បង្កើតគណនីថ្មី</a>
+                        </div>
+                    </div>
+                    
+                    <!-- View 2: Sign Up (Hidden) -->
+                    <div id="sign-up-view" class="hidden">
+                        <h2 class="text-2xl font-bold text-center text-slate-800 mb-6">បង្កើតគណនីថ្មី (Sign Up)</h2>
+                        <form id="sign-up-form">
+                            <div class="mb-4">
+                                <label for="signup-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                                <input type="email" id="signup-email" class="w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="signup-password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                                <input type="password" id="signup-password" class="w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" required>
+                            </div>
+                            <div class="mb-6">
+                                <label for="signup-confirm-password" class="block text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
+                                <input type="password" id="signup-confirm-password" class="w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" required>
+                            </div>
+                            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300">
+                                បង្កើតគណនី (Sign Up)
+                            </button>
+                        </form>
+                        
+                        <div class="mt-5 text-center">
+                            <a href="#" id="show-signin-link" class="text-sm font-medium text-teal-600 hover:text-teal-800">មានគណនីរួចហើយ? ចូលប្រព័ន្ធ</a>
+                        </div>
+                    </div>
+                    
+                </div> <!-- End Auth View Container -->
+
+                <!-- Divider -->
+                <div class="my-6 flex items-center">
+                    <div class="flex-grow border-t border-slate-300"></div>
+                    <span class="mx-4 text-xs font-medium text-slate-500">OR</span>
+                    <div class="flex-grow border-t border-slate-300"></div>
+                </div>
+
+                <!-- Google Sign In -->
+                <button id="google-login-button" class="w-full flex justify-center items-center bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold py-3 px-4 rounded-lg shadow-sm transition duration-300">
+                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C39.901,36.096,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                    Sign in with Google
+                </button>
+            </div>
+        </section>
+        
+        <!-- 
+          SECTION 2: MODAL OVERLAYS (Create Class, etc.)
+        -->
+        
+        <!-- Create Class Modal -->
+        <div id="create-class-modal" class="hidden fixed inset-0 z-40 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-lg p-6 rounded-xl shadow-2xl">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">បង្កើតថ្នាក់រៀនថ្មី (Create Class)</h2>
+                <form id="create-class-form">
+                    <label for="class-name-input" class="block text-sm font-medium text-slate-700 mb-2">ឈ្មោះថ្នាក់រៀន (Class Name)</label>
+                    <input type="text" id="class-name-input" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., Web Development 101" required>
+                    
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-create-class" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg shadow-sm transition duration-300">
+                            បោះបង់ (Cancel)
+                        </button>
+                        <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                            បង្កើត (Create)
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Create Assignment Modal -->
+        <div id="create-assignment-modal" class="hidden fixed inset-0 z-40 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4 overflow-y-auto">
+            <div class="bg-white w-full max-w-lg p-6 rounded-xl shadow-2xl my-8">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">បង្កើតកិច្ចការថ្មី (Create Assignment)</h2>
+                <form id="create-assignment-form">
+                    <!-- Title -->
+                    <div class="mb-4">
+                        <label for="assignment-title-input" class="block text-sm font-medium text-slate-700 mb-2">ចំណងជើង (Title)</label>
+                        <input type="text" id="assignment-title-input" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., Homework 1" required>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label for="assignment-desc-input" class="block text-sm font-medium text-slate-700 mb-2">ការពិពណ៌នា (Description)</label>
+                        <textarea id="assignment-desc-input" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" rows="4"></textarea>
+                    </div>
+                    
+                    <!-- Select Class -->
+                    <div class="mb-6">
+                        <label for="assignment-class-select" class="block text-sm font-medium text-slate-700 mb-2">ជ្រើសរើសថ្នាក់រៀន (Select Class)</label>
+                        <select id="assignment-class-select" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 bg-white" required>
+                            <!-- Options will be populated by JS -->
+                            <option value="">កំពុងទាញយកថ្នាក់រៀន...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-create-assignment" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg shadow-sm transition duration-300">
+                            បោះបង់ (Cancel)
+                        </button>
+                        <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                            បង្កើត (Create)
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ***** START: NEW MODALS FOR GROUPS ***** -->
+
+        <!-- Create Group Project Modal -->
+        <div id="create-project-modal" class="hidden fixed inset-0 z-40 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-lg p-6 rounded-xl shadow-2xl">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">បង្កើតគម្រោងក្រុមថ្មី</h2>
+                <form id="create-project-form">
+                    <label for="project-name-input" class="block text-sm font-medium text-slate-700 mb-2">ឈ្មោះគម្រោង (Project Name)</label>
+                    <input type="text" id="project-name-input" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., Final Project Web Design" required>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-create-project" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg shadow-sm transition duration-300">បោះបង់</button>
+                        <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">បង្កើត</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Create Group Modal -->
+        <div id="create-group-modal" class="hidden fixed inset-0 z-40 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-lg p-6 rounded-xl shadow-2xl">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">បង្កើតក្រុមថ្មី</h2>
+                <form id="create-group-form">
+                    <input type="hidden" id="project-id-for-group"> <!-- Hidden field to store project ID -->
+                    <label for="group-name-input" class="block text-sm font-medium text-slate-700 mb-2">ឈ្មោះក្រុម (Group Name)</label>
+                    <input type="text" id="group-name-input" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., Group 1" required>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-create-group" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg shadow-sm transition duration-300">បោះបង់</button>
+                        <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">បង្កើត</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Member Modal (Admin Only) -->
+        <div id="add-member-modal" class="hidden fixed inset-0 z-40 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-lg p-6 rounded-xl shadow-2xl">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">បន្ថែមសមាជិក (Admin)</h2>
+                <form id="add-member-form">
+                    <input type="hidden" id="project-id-for-member">
+                    <input type="hidden" id="group-id-for-member">
+                    <label for="member-name-input" class="block text-sm font-medium text-slate-700 mb-2">ឈ្មោះសមាជិក (Member Name)</label>
+                    <input type="text" id="member-name-input" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., Lao Limheang" required>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-add-member" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg shadow-sm transition duration-300">បោះបង់</button>
+                        <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">បន្ថែម</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ***** END: NEW MODALS FOR GROUPS ***** -->
+
+
+        <!-- 
+          SECTION 3: MAIN APPLICATION (Logged In)
+        -->
+        <main id="main-content" class="hidden">
+            <div class="flex h-screen">
+                <!-- Sidebar -->
+                <nav id="sidebar" class="w-64 bg-slate-900 text-slate-200 flex flex-col shadow-lg">
+                    <!-- Sidebar Header -->
+                    <div class="flex items-center justify-center h-20 shadow-md bg-slate-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-teal-500">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                        </svg>
+                        <span class="text-xl font-bold ml-2 text-white">Edubase</span>
+                    </div>
+                    
+                    <!-- Sidebar Links -->
+                    <div class="flex-1 py-6 space-y-2 overflow-y-auto">
+                        <!-- Student Links -->
+                        <div id="student-nav-links">
+                            <a href="#" id="sidebar-dashboard" class="sidebar-link active flex items-center space-x-3 px-6 py-3 text-slate-200 hover:bg-slate-700 hover:text-white transition rounded-lg mx-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6zm4 0v12m8-12v12m-4-12v12" /></svg>
+                                <span>Dashboard</span>
+                            </a>
+                            <a href="#" id="sidebar-my-classes" class="sidebar-link flex items-center space-x-3 px-6 py-3 text-slate-200 hover:bg-slate-700 hover:text-white transition rounded-lg mx-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 0 1 .665 6.479A11.952 11.952 0 0 0 12 20.055a11.952 11.952 0 0 0-6.824-2.998 12.078 12.078 0 0 1 .665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v5.5a2.5 2.5 0 0 0 5 0V14m-5 5.5a2.5 2.5 0 0 1-5 0V14" /></svg>
+                                <span>ថ្នាក់រៀនខ្ញុំ</span>
+                            </a>
+                            <a href="#" id="sidebar-my-assignments" class="sidebar-link flex items-center space-x-3 px-6 py-3 text-slate-200 hover:bg-slate-700 hover:text-white transition rounded-lg mx-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9z" /></svg>
+                                <span>កិច្ចការខ្ញុំ</span>
+                            </a>
+                            <!-- ***** NEW: Group Link for Student ***** -->
+                            <a href="#" id="sidebar-groups" class="sidebar-link flex items-center space-x-3 px-6 py-3 text-slate-200 hover:bg-slate-700 hover:text-white transition rounded-lg mx-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2.625c0-.995-.505-1.903-1.332-2.433l-2.022-.92c-.754-.343-1.632-.343-2.386 0l-2.022.92C12.505 15.472 12 16.38 12 17.375V20h5zM12 11.875a3.375 3.375 0 1 0 0-6.75 3.375 3.375 0 0 0 0 6.75zM12.75 12.75h-1.5a2.25 2.25 0 0 0-2.25 2.25V20h6v-5.25a2.25 2.25 0 0 0-2.25-2.25z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.125 11.875a3.375 3.375 0 1 0 0-6.75 3.375 3.375 0 0 0 0 6.75zM5.25 12.75h-1.5a2.25 2.25 0 0 0-2.25 2.25V20h6v-5.25a2.25 2.25 0 0 0-2.25-2.25z" />
+                                </svg>
+                                <span>ការ​បែងចែក​ក្រុម</span>
+                            </a>
+                        </div>
+                        
+                        <!-- Admin Links (Hidden by default) -->
+                        <div id="admin-nav-links" class="hidden">
+                            <hr class="border-slate-700 mx-3 my-3">
+                            <h3 class="px-6 py-2 text-xs font-semibold text-teal-400 uppercase tracking-wider">Admin</h3>
+                             <a href="#" id="sidebar-admin-classes" class="sidebar-link flex items-center space-x-3 px-6 py-3 text-slate-200 hover:bg-slate-700 hover:text-white transition rounded-lg mx-3">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 0 1 .665 6.479A11.952 11.952 0 0 0 12 20.055a11.952 11.952 0 0 0-6.824-2.998 12.078 12.078 0 0 1 .665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v5.5a2.5 2.5 0 0 0 5 0V14m-5 5.5a2.5 2.5 0 0 1-5 0V14" /></svg>
+                                 <span>គ្រប់គ្រងថ្នាក់</span>
+                             </a>
+                             <a href="#" id="sidebar-admin-assignments" class="sidebar-link flex items-center space-x-3 px-6 py-3 text-slate-200 hover:bg-slate-700 hover:text-white transition rounded-lg mx-3">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9z" /></svg>
+                                 <span>គ្រប់គ្រងកិច្ចការ</span>
+                             </a>
+                             <!-- ***** NEW: Group Link for Admin ***** -->
+                            <a href="#" id="sidebar-admin-groups" class="sidebar-link flex items-center space-x-3 px-6 py-3 text-slate-200 hover:bg-slate-700 hover:text-white transition rounded-lg mx-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2.625c0-.995-.505-1.903-1.332-2.433l-2.022-.92c-.754-.343-1.632-.343-2.386 0l-2.022.92C12.505 15.472 12 16.38 12 17.375V20h5zM12 11.875a3.375 3.375 0 1 0 0-6.75 3.375 3.375 0 0 0 0 6.75zM12.75 12.75h-1.5a2.25 2.25 0 0 0-2.25 2.25V20h6v-5.25a2.25 2.25 0 0 0-2.25-2.25z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.125 11.875a3.375 3.375 0 1 0 0-6.75 3.375 3.375 0 0 0 0 6.75zM5.25 12.75h-1.5a2.25 2.25 0 0 0-2.25 2.25V20h6v-5.25a2.25 2.25 0 0 0-2.25-2.25z" />
+                                </svg>
+                                <span>គ្រប់គ្រងក្រុម</span>
+                            </a>
+                             <a href="#" id="sidebar-admin-panel" class="sidebar-link flex items-center space-x-3 px-6 py-3 text-slate-200 hover:bg-slate-700 hover:text-white transition rounded-lg mx-3">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.59 1.586a1 1 0 0 1 1.414 0l2.828 2.828a1 1 0 0 1 0 1.414l-2.828 2.828a1 1 0 0 1-1.414 0l-2.828-2.828a1 1 0 0 1 0-1.414l2.828-2.828zM14.414 1.586a1 1 0 0 1 1.414 0l2.828 2.828a1 1 0 0 1 0 1.414l-2.828 2.828a1 1 0 0 1-1.414 0l-2.828-2.828a1 1 0 0 1 0-1.414l2.828-2.828zM9.59 11.586a1 1 0 0 1 1.414 0l2.828 2.828a1 1 0 0 1 0 1.414l-2.828 2.828a1 1 0 0 1-1.414 0l-2.828-2.828a1 1 0 0 1 0-1.414l2.828-2.828zM14.414 11.586a1 1 0 0 1 1.414 0l2.828 2.828a1 1 0 0 1 0 1.414l-2.828 2.828a1 1 0 0 1-1.414 0l-2.828-2.828a1 1 0 0 1 0-1.414l2.828-2.828z" /></svg>
+                                 <span>Admin Panel</span>
+                             </a>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Footer (Profile/Logout) -->
+                    <div class="p-4 border-t border-slate-700">
+                        <a href="#" id="sidebar-profile" class="sidebar-link flex items-center w-full p-3 text-slate-200 hover:bg-slate-700 rounded-lg transition">
+                            <img id="user-avatar" class="h-8 w-8 rounded-full bg-gray-200 object-cover" src="https://placehold.co/40x40/cbd5e1/7f8ea3?text=User" alt="User Avatar">
+                            <span id="user-display-name" class="ml-3 text-sm font-medium" title="User Email">...</span>
+                        </a>
+                        <button id="logout-button" class="w-full flex items-center space-x-2 mt-2 py-2 px-3 text-sm font-medium text-red-400 hover:bg-red-900 hover:text-red-200 rounded-lg transition">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1" /></svg>
+                            <span>ចាកចេញ (Logout)</span>
+                        </button>
+                    </div>
+                </nav>
+
+                <!-- Main Content Area -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <!-- Top Header Bar -->
+                    <header class="bg-white shadow-sm border-b border-slate-200 h-20 flex items-center justify-between px-6">
+                        <h1 id="page-title" class="text-3xl font-bold text-slate-800">Dashboard</h1>
+                         <!-- Placeholder for potential search bar or actions -->
+                         <div></div>
+                    </header>
+                    
+                    <!-- Page Content -->
+                    <div class="flex-1 p-6 md:p-8 overflow-y-auto">
+
+                        <!-- 
+                          PAGE 1: DASHBOARD
+                        -->
+                        <div id="page-dashboard" class="page-content">
+
+                            <!-- Admin Dashboard -->
+                            <div id="admin-dashboard-view" class="hidden">
+                                <!-- Stats Cards -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <!-- Total Users -->
+                                    <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200 transition-shadow hover:shadow-xl flex items-center space-x-4">
+                                        <div class="p-3 rounded-full bg-teal-100 text-teal-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 1 1 0 5.292M15 21H3v-1.5a4.5 4.5 0 0 1 4.5-4.5h3a4.5 4.5 0 0 1 4.5 4.5V21zm4-12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" /></svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-sm font-medium text-slate-500">អ្នកប្រើប្រាស់សរុប (Total Users)</h3>
+                                            <p id="stats-total-users" class="text-3xl font-bold text-slate-900 mt-1">...</p>
+                                        </div>
+                                    </div>
+                                    <!-- Total Classes -->
+                                    <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200 transition-shadow hover:shadow-xl flex items-center space-x-4">
+                                        <div class="p-3 rounded-full bg-emerald-100 text-emerald-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 0 1 .665 6.479A11.952 11.952 0 0 0 12 20.055a11.952 11.952 0 0 0-6.824-2.998 12.078 12.078 0 0 1 .665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v5.5a2.5 2.5 0 0 0 5 0V14m-5 5.5a2.5 2.5 0 0 1-5 0V14" /></svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-sm font-medium text-slate-500">ថ្នាក់រៀនសរុប (Total Classes)</h3>
+                                            <p id="stats-total-classes" class="text-3xl font-bold text-slate-900 mt-1">...</p>
+                                        </div>
+                                    </div>
+                                    <!-- Total Assignments -->
+                                    <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200 transition-shadow hover:shadow-xl flex items-center space-x-4">
+                                        <div class="p-3 rounded-full bg-sky-100 text-sky-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9z" /></svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-sm font-medium text-slate-500">កិច្ចការសរុប (Total Assignments)</h3>
+                                            <p id="stats-total-assignments" class="text-3xl font-bold text-slate-900 mt-1">...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Quick Actions -->
+                                <div class="bg-white border border-slate-200 p-6 rounded-xl shadow-lg mb-8">
+                                    <h2 class="text-2xl font-bold text-slate-800 mb-5">សកម្មភាពរហ័ស (Quick Actions)</h2>
+                                    <div class="flex flex-wrap gap-4">
+                                        <button id="action-create-class" class="flex items-center bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md transition duration-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 0 1 .665 6.479A11.952 11.952 0 0 0 12 20.055a11.952 11.952 0 0 0-6.824-2.998 12.078 12.078 0 0 1 .665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v5.5a2.5 2.5 0 0 0 5 0V14m-5 5.5a2.5 2.5 0 0 1-5 0V14" /></svg>
+                                            <span>Create Class</span>
+                                        </button>
+                                        <button id="action-create-assignment" class="flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md transition duration-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9z" /></svg>
+                                            <span>Create Assignment</span>
+                                        </button>
+                                        <button id="action-create-user" class="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md transition duration-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0zM4 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 10.5 21h-3A12.318 12.318 0 0 1 4 19.235z" /></svg>
+                                            <span>Create User</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Student Dashboard -->
+                            <div id="student-dashboard-view" class="hidden">
+                                <h2 class="text-2xl font-bold text-slate-800 mb-4">កិច្ចការដែលត្រូវធ្វើ (My Assignments)</h2>
+                                <div id="student-assignment-list-loading" class="text-slate-500">កំពុងទាញយកកិច្ចការ...</div>
+                                <div id="student-assignment-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                    <!-- Sticky note cards populated here -->
+                                </div>
+                                <p id="student-no-assignments" class="text-slate-500 hidden">មិនទាន់មានកិច្ចការទេ។</p>
+                                
+                                <!-- System Announcements -->
+                                <div class="bg-white p-6 rounded-xl shadow-md mt-10 border border-slate-200">
+                                    <h3 class="text-2xl font-semibold text-slate-800 mb-4">សេចក្ដីប្រកាសប្រព័ន្ធ</h3>
+                                    <div id="announcements-loading" class="text-slate-500">កំពុងទាញយកទិន្នន័យ...</div>
+                                    <ul id="announcements-list" class="space-y-4"></ul>
+                                    <p id="no-announcements" class="text-slate-500 hidden">មិនទាន់មានសេចក្ដីប្រកាសនៅឡើយទេ។</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 
+                          PAGE 2: STUDENT 'My Classes'
+                        -->
+                        <div id="page-my-classes" class="page-content hidden">
+                            <!-- Available Classes Section -->
+                            <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                                <h2 class="text-2xl font-bold text-slate-800 mb-4">ថ្នាក់រៀនដែលមាន (Available Classes)</h2>
+                                <div id="student-class-list-loading" class="text-slate-500">កំពុងទាញយក...</div>
+                                <div id="student-class-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <!-- Student class list loaded here -->
+                                </div>
+                                <p id="student-no-classes" class="text-slate-500 hidden">មិនទាន់មានថ្នាក់រៀនទេ។</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 
+                          PAGE 3: STUDENT 'My Assignments'
+                        -->
+                        <div id="page-my-assignments" class="page-content hidden">
+                            <!-- This just re-shows the student assignment list, same as dashboard -->
+                            <div id="student-assignment-list-full-page" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                <!-- Content will be mirrored from the dashboard list -->
+                            </div>
+                        </div>
+
+
+                        <!-- 
+                          PAGE 4: PROFILE
+                        -->
+                        <div id="page-profile" class="page-content hidden">
+                            <div class="bg-white p-8 rounded-xl shadow-lg max-w-lg mx-auto border border-slate-200">
+                                <h2 class="text-2xl font-bold text-slate-800 mb-6">គណនីរបស់ខ្ញុំ (My Profile)</h2>
+                                <form id="profile-form">
+                                    <!-- Email (Read-only) -->
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                                        <p id="profile-email-display" class="text-slate-800 font-medium bg-slate-100 px-4 py-3 rounded-lg"></p>
+                                    </div>
+                                    
+                                    <!-- Display Name -->
+                                    <div class="mb-4">
+                                        <label for="profile-display-name-input" class="block text-sm font-medium text-slate-700 mb-1">ឈ្មោះបង្ហាញ (Display Name)</label>
+                                        <input type="text" id="profile-display-name-input" class="w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" required>
+                                    </div>
+                                    
+                                    <!-- Photo URL -->
+                                    <div class="mb-6">
+                                        <label for="profile-photo-url-input" class="block text-sm font-medium text-slate-700 mb-1">រូបថត (Photo URL)</label>
+                                        <input type="text" id="profile-photo-url-input" class="w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="https://example.com/image.png">
+                                    </div>
+                                    
+                                    <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300">
+                                        រក្សាទុកការផ្លាស់ប្តូរ (Save Changes)
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- 
+                          PAGE 5: ADMIN - Manage Classes
+                        -->
+                        <div id="page-admin-classes" class="page-content hidden">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-2xl font-bold text-slate-800">គ្រប់គ្រងថ្នាក់រៀន (Manage Classes)</h2>
+                                <button id="action-create-class-page" class="flex items-center bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                                    <span>បង្កើតថ្នាក់ថ្មី</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Admin Class List Table -->
+                            <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                                <div id="admin-class-list-loading" class="text-slate-500">កំពុងទាញយកទិន្នន័យ...</div>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-slate-200">
+                                        <thead class="bg-slate-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ឈ្មោះថ្នាក់រៀន</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">បង្កើតដោយ</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ថ្ងៃបង្កើត</th>
+                                                <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-class-list" class="bg-white divide-y divide-slate-200">
+                                            <!-- Class rows will be populated here by JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p id="admin-no-classes" class="text-slate-500 hidden p-4">មិនទាន់មានថ្នាក់រៀននៅឡើយទេ។</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 
+                          PAGE 6: ADMIN - Manage Assignments
+                        -->
+                        <div id="page-admin-assignments" class="page-content hidden">
+                             <div class="flex justify-between items-center mb-6">
+                                 <h2 class="text-2xl font-bold text-slate-800">គ្រប់គ្រងកិច្ចការ (Manage Assignments)</h2>
+                                 <button id="action-create-assignment-page" class="flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                                     <span>បង្កើតកិច្ចការថ្មី</span>
+                                 </button>
+                             </div>
+                            
+                            <!-- Admin Assignment List Table -->
+                            <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                                <div id="admin-assignment-list-loading" class="text-slate-500">កំពុងទាញយកទិន្នន័យ...</div>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-slate-200">
+                                        <thead class="bg-slate-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ចំណងជើងកិច្ចការ</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">សម្រាប់ថ្នាក់</th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ថ្ងៃបង្កើត</th>
+                                                <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-assignment-list" class="bg-white divide-y divide-slate-200">
+                                            <!-- Assignment rows will be populated here by JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p id="admin-no-assignments" class="text-slate-500 hidden p-4">មិនទាន់មានកិច្ចការនៅឡើយទេ។</p>
+                            </div>
+                        </div>
+
+                        <!-- 
+                          PAGE 7: ADMIN PANEL (for Announcements & Users)
+                        -->
+                        <div id="page-admin-panel" class="page-content hidden">
+                             <div class="mb-8 bg-teal-50 border-l-4 border-teal-500 text-teal-800 p-6 rounded-lg shadow-md">
+                                 <h2 class="text-2xl font-bold mb-4">ផ្ទាំងគ្រប់គ្រង Admin</h2>
+                                 <p class="mb-4">អ្នកបានចូលជា Admin។ អ្នកអាចគ្រប់គ្រងអ្នកប្រើប្រាស់ និងសេចក្តីប្រកាសប្រព័ន្ធនៅទីនេះ។</p>
+                             </div>
+                            
+                            <!-- Create Announcement Form -->
+                            <div class="bg-white p-6 rounded-xl shadow-md mt-8 border border-slate-200">
+                                <form id="create-announcement-form" class="mb-6 border-b pb-6 border-slate-200">
+                                    <h3 class="text-xl font-semibold text-slate-800 mb-3">បង្កើតសេចក្ដីប្រកាស (Admin)</h3>
+                                    <textarea id="announcement-text-input" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" rows="3" placeholder="វាយសេចក្ដីប្រកាសនៅទីនេះ..." required></textarea>
+                                    <button type="submit" class="mt-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                                        បង្ហោះ (Post)
+                                    </button>
+                                </form>
+                                
+                                <h3 class="text-xl font-semibold text-slate-800 mb-4">គ្រប់គ្រងអ្នកប្រើប្រាស់ (User Management)</h3>
+                                <p class="text-slate-500">(... បញ្ជីអ្នកប្រើប្រាស់នឹងបង្ហាញនៅទីនេះ ...)</p>
+                            </div>
+                        </div>
+
+                        <!-- PAGE 8: Class Details (Admin) - Kept from original for future use -->
+                        <div id="page-class-details" class="page-content hidden">
+                            <button id="back-to-admin-classes" class="text-sm font-medium text-teal-600 hover:text-teal-800 mb-4">
+                                &larr; ត្រឡប់ទៅ គ្រប់គ្រងថ្នាក់
+                            </button>
+                            <h1 id="class-details-name" class="text-3xl font-bold text-slate-900 mb-6">Class Name</h1>
+                            
+                            <div class="bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto border border-slate-200">
+                                <h2 class="text-2xl font-bold text-slate-800 mb-4">Add Student to Class</h2>
+                                <form id="add-student-form">
+                                    <label for="student-email-input" class="block text-sm font-medium text-slate-700 mb-2">Student Email</label>
+                                    <input type="email" id="student-email-input" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm" placeholder="student@example.com">
+                                    <button type="submit" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md">
+                                        Add Student
+                                    </button>
+                                </form>
+                                <p class="text-sm text-slate-500 mt-4">(Note: មុខងារនេះមិនទាន់ដំណើរការពេញលេញទេ។)</p>
+                                
+                                <h3 class="text-xl font-bold text-slate-800 mt-8 mb-4">Students in this Class</h3>
+                                <ul id="class-student-list">
+                                    <li class="text-slate-500">...</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- ***** START: NEW PAGE FOR GROUPS (PAGE 9) ***** -->
+                        <div id="page-group-assignments" class="page-content hidden">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-2xl font-bold text-slate-800">ការ​បែងចែក​ក្រុម</h2>
+                                <button id="action-create-project" class="admin-only flex items-center bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                                    <span>បង្កើតគម្រោងក្រុមថ្មី</span>
+                                </button>
+                            </div>
+
+                            <!-- Container for Group Projects -->
+                            <div id="group-projects-loading" class="text-slate-500">កំពុងទាញយកគម្រោងក្រុម...</div>
+                            <div id="group-projects-list" class="space-y-8">
+                                <!-- Group projects will be loaded here by JS -->
+                            </div>
+                            <p id="no-group-projects" class="text-slate-500 hidden p-4">មិនទាន់មានគម្រោងក្រុមនៅឡើយទេ។</p>
+                        </div>
+                        <!-- ***** END: NEW PAGE FOR GROUPS ***** -->
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 
+      ============================================================
+      APP JAVASCRIPT
+      ============================================================
+    -->
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import {
+            getAuth,
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            signInAnonymously,
+            signInWithPopup,
+            GoogleAuthProvider,
+            updateProfile,
+            setPersistence,
+            browserLocalPersistence,
+            signInWithCustomToken // Added for __initial_auth_token
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            setDoc,
+            getDoc,
+            addDoc,
+            collection,
+            onSnapshot,
+            serverTimestamp,
+            query,
+            deleteDoc,
+            Timestamp,
+            // orderBy, // REMOVED to avoid index errors
+            updateDoc, // NEW: For updating arrays
+            arrayUnion, // NEW: For adding to arrays
+            arrayRemove, // NEW: For removing from arrays
+            setLogLevel // Added for debugging
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Config (from user, DO NOT EDIT) ---
+        const firebaseConfigFromUser = {
+            apiKey: "AIzaSyCRu6-CCB6vJ8NGhNAxEfhpG9dJSqhkZnE",
+            authDomain: "edubase-web.firebaseapp.com",
+            projectId: "edubase-web",
+            storageBucket: "edubase-web.firebasestorage.app",
+            messagingSenderId: "195315645742",
+            appId: "1:195315645742:web:5ed5dd15d892942b02cebf",
+            measurementId: "G-X3X0QD0RM1"
+        };
+
+        // --- Use Canvas-provided variables (MANDATORY) ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : firebaseConfigFromUser;
+            
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Initialize Firebase
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            setLogLevel('Debug'); // Enable Firebase logging
+            console.debug("Firebase initialized successfully with config:", firebaseConfig.projectId);
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            // Show error on screen if DOM is ready
+            document.addEventListener('DOMContentLoaded', () => {
+                showMessage(`Firebase Init Error: ${error.message}`, 'error');
+            });
+        }
+
+        // Global state
+        let currentUserId = null;
+        let currentUserProfile = null;
+        let currentRole = 'student';
+        let currentClassList = []; // Cache for class list
+        
+        // Firestore listeners
+        let announcementsListener = null;
+        let usersListener = null;
+        let classesListener = null;
+        let assignmentsListener = null;
+        let studentClassesListener = null;
+        let studentAssignmentsListener = null;
+        
+        // NEW: Listeners for groups
+        let groupProjectsListener = null; // Main listener
+        let groupSubListeners = []; // Array for sub-collection listeners
+
+        // Defer all DOM queries and event wiring until DOM is ready.
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const loginScreen = document.getElementById('login-screen');
+            const mainContent = document.getElementById('main-content');
+            const messageBox = document.getElementById('message-box');
+            
+            // Modals
+            const confirmationModal = document.getElementById('confirmation-modal');
+            const confirmationTitle = document.getElementById('confirmation-title');
+            const confirmationMessage = document.getElementById('confirmation-message');
+            const confirmationCancel = document.getElementById('confirmation-cancel');
+            const confirmationConfirm = document.getElementById('confirmation-confirm');
+            let confirmCallback = null;
+
+            // Auth
+            const loginForm = document.getElementById('login-form');
+            const loginEmailInput = document.getElementById('login-email');
+            const loginPasswordInput = document.getElementById('login-password');
+            const signUpForm = document.getElementById('sign-up-form');
+            const signupEmailInput = document.getElementById('signup-email');
+            const signupPasswordInput = document.getElementById('signup-password');
+            const signupConfirmPasswordInput = document.getElementById('signup-confirm-password');
+            const googleLoginButton = document.getElementById('google-login-button');
+            const logoutButton = document.getElementById('logout-button');
+            const signInView = document.getElementById('sign-in-view');
+            const signUpView = document.getElementById('sign-up-view');
+            const showSignupLink = document.getElementById('show-signup-link');
+            const showSigninLink = document.getElementById('show-signin-link');
+
+            // Sidebar & Header
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            const pageTitle = document.getElementById('page-title');
+            const userDisplayName = document.getElementById('user-display-name');
+            const userAvatar = document.getElementById('user-avatar');
+            const studentNavLinks = document.getElementById('student-nav-links');
+            const adminNavLinks = document.getElementById('admin-nav-links');
+            
+            // Sidebar Links
+            const sidebarDashboard = document.getElementById('sidebar-dashboard');
+            const sidebarMyClasses = document.getElementById('sidebar-my-classes');
+            const sidebarMyAssignments = document.getElementById('sidebar-my-assignments');
+            const sidebarProfile = document.getElementById('sidebar-profile');
+            const sidebarAdminClasses = document.getElementById('sidebar-admin-classes');
+            const sidebarAdminAssignments = document.getElementById('sidebar-admin-assignments');
+            const sidebarAdminPanel = document.getElementById('sidebar-admin-panel');
+
+            // NEW: Group Sidebar Links
+            const sidebarGroupsStudent = document.getElementById('sidebar-groups');
+            const sidebarGroupsAdmin = document.getElementById('sidebar-admin-groups');
+
+            // Pages
+            const allPages = document.querySelectorAll('.page-content');
+            const pageDashboard = document.getElementById('page-dashboard');
+            const pageMyClasses = document.getElementById('page-my-classes');
+            const pageMyAssignments = document.getElementById('page-my-assignments');
+            const pageProfile = document.getElementById('page-profile');
+            const pageAdminClasses = document.getElementById('page-admin-classes');
+            const pageAdminAssignments = document.getElementById('page-admin-assignments');
+            const pageAdminPanel = document.getElementById('page-admin-panel');
+            const pageClassDetails = document.getElementById('page-class-details'); // Kept for future
+            
+            // NEW: Group Page
+            const pageGroupAssignments = document.getElementById('page-group-assignments');
+
+            // Dashboard
+            const adminDashboardView = document.getElementById('admin-dashboard-view');
+            const studentDashboardView = document.getElementById('student-dashboard-view');
+            const statsTotalUsers = document.getElementById('stats-total-users');
+            const statsTotalClasses = document.getElementById('stats-total-classes');
+            const statsTotalAssignments = document.getElementById('stats-total-assignments');
+            
+            // Quick Actions
+            const actionCreateClass = document.getElementById('action-create-class');
+            const actionCreateAssignment = document.getElementById('action-create-assignment');
+            const actionCreateUser = document.getElementById('action-create-user');
+            const actionCreateClassPage = document.getElementById('action-create-class-page');
+            const actionCreateAssignmentPage = document.getElementById('action-create-assignment-page');
+
+            // Create Class Modal
+            const createClassModal = document.getElementById('create-class-modal');
+            const createClassForm = document.getElementById('create-class-form');
+            const cancelCreateClassButton = document.getElementById('cancel-create-class');
+            const classNameInput = document.getElementById('class-name-input');
+            
+            // Create Assignment Modal
+            const createAssignmentModal = document.getElementById('create-assignment-modal');
+            const createAssignmentForm = document.getElementById('create-assignment-form');
+            const cancelCreateAssignment = document.getElementById('cancel-create-assignment');
+            const assignmentTitleInput = document.getElementById('assignment-title-input');
+            const assignmentDescInput = document.getElementById('assignment-desc-input');
+            const assignmentClassSelect = document.getElementById('assignment-class-select');
+
+            // Admin Class List
+            const adminClassList = document.getElementById('admin-class-list');
+            const adminClassListLoading = document.getElementById('admin-class-list-loading');
+            const adminNoClasses = document.getElementById('admin-no-classes');
+            
+            // Admin Assignment List
+            const adminAssignmentList = document.getElementById('admin-assignment-list');
+            const adminAssignmentListLoading = document.getElementById('admin-assignment-list-loading');
+            const adminNoAssignments = document.getElementById('admin-no-assignments');
+
+            // Student Class List
+            const studentClassList = document.getElementById('student-class-list');
+            const studentClassListLoading = document.getElementById('student-class-list-loading');
+            const studentNoClasses = document.getElementById('student-no-classes');
+
+            // Student Assignment List
+            const studentAssignmentList = document.getElementById('student-assignment-list');
+            const studentAssignmentListLoading = document.getElementById('student-assignment-list-loading');
+            const studentNoAssignments = document.getElementById('student-no-assignments');
+            const studentAssignmentListFullPage = document.getElementById('student-assignment-list-full-page');
+
+            // Profile Page
+            const profileForm = document.getElementById('profile-form');
+            const profileEmailDisplay = document.getElementById('profile-email-display');
+            const profileDisplayNameInput = document.getElementById('profile-display-name-input');
+            const profilePhotoUrlInput = document.getElementById('profile-photo-url-input');
+
+            // Announcements
+            const announcementsList = document.getElementById('announcements-list');
+            const announcementsLoading = document.getElementById('announcements-loading');
+            const noAnnouncements = document.getElementById('no-announcements');
+            const createAnnouncementForm = document.getElementById('create-announcement-form');
+            const announcementTextInput = document.getElementById('announcement-text-input');
+
+            // Class Details Page
+            const classDetailsName = document.getElementById('class-details-name');
+            const backToAdminClassesButton = document.getElementById('back-to-admin-classes');
+            const addStudentForm = document.getElementById('add-student-form');
+
+            // ***** NEW: Group Page Elements *****
+            const actionCreateProject = document.getElementById('action-create-project');
+            const groupProjectsLoading = document.getElementById('group-projects-loading');
+            const groupProjectsList = document.getElementById('group-projects-list');
+            const noGroupProjects = document.getElementById('no-group-projects');
+
+            // Create Project Modal
+            const createProjectModal = document.getElementById('create-project-modal');
+            const createProjectForm = document.getElementById('create-project-form');
+            const cancelCreateProject = document.getElementById('cancel-create-project');
+            const projectNameInput = document.getElementById('project-name-input');
+
+            // Create Group Modal
+            const createGroupModal = document.getElementById('create-group-modal');
+            const createGroupForm = document.getElementById('create-group-form');
+            const cancelCreateGroup = document.getElementById('cancel-create-group');
+            const groupNameInput = document.getElementById('group-name-input');
+            const projectIdForGroup = document.getElementById('project-id-for-group');
+
+            // Add Member Modal
+            const addMemberModal = document.getElementById('add-member-modal');
+            const addMemberForm = document.getElementById('add-member-form');
+            const cancelAddMember = document.getElementById('cancel-add-member');
+            const memberNameInput = document.getElementById('member-name-input');
+            const projectIdForMember = document.getElementById('project-id-for-member');
+            const groupIdForMember = document.getElementById('group-id-for-member');
+
+            // --- Utility Functions ---
+            function showMessage(message, type = 'success') {
+                if (!messageBox) {
+                    console.warn('messageBox element missing:', message);
+                    return;
+                }
+                messageBox.textContent = message;
+                messageBox.classList.remove('hidden', 'bg-emerald-600', 'bg-red-600');
+
+                if (type === 'success') {
+                    messageBox.classList.add('bg-emerald-600');
+                } else {
+                    messageBox.classList.add('bg-red-600');
+                }
+
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 3000);
+            }
+
+            function showAuthView(viewName) {
+                if (!signInView || !signUpView) return;
+                if (viewName === 'signup') {
+                    signInView.classList.add('hidden');
+                    signUpView.classList.remove('hidden');
+                } else {
+                    signInView.classList.remove('hidden');
+                    signUpView.classList.add('hidden');
+                }
+            }
+            
+            function showConfirmationModal(title, message, onConfirmCallback) {
+                confirmationTitle.textContent = title;
+                confirmationMessage.textContent = message;
+                confirmCallback = onConfirmCallback; // Store the callback
+                confirmationModal.classList.remove('hidden');
+            }
+            
+            confirmationCancel.addEventListener('click', () => {
+                confirmationModal.classList.add('hidden');
+                confirmCallback = null;
+            });
+            
+            confirmationConfirm.addEventListener('click', () => {
+                if (typeof confirmCallback === 'function') {
+                    confirmCallback(); // Execute the stored callback
+                }
+                confirmationModal.classList.add('hidden');
+                confirmCallback = null;
+            });
+
+            // --- Navigation ---
+            function showPage(pageId, title) {
+                allPages.forEach(page => page.classList.add('hidden'));
+                const targetPage = document.getElementById(pageId);
+                if (targetPage) {
+                    targetPage.classList.remove('hidden');
+                }
+                pageTitle.textContent = title;
+
+                sidebarLinks.forEach(link => {
+                    link.classList.remove('active');
+                });
+
+                // Find the correct link to activate
+                let activeLink = null;
+                if (pageId === 'page-dashboard') {
+                    activeLink = sidebarDashboard;
+                } else if (pageId === 'page-my-classes') {
+                    activeLink = sidebarMyClasses;
+                } else if (pageId === 'page-my-assignments') {
+                    activeLink = sidebarMyAssignments;
+                } else if (pageId === 'page-profile') {
+                    activeLink = sidebarProfile;
+                } else if (pageId === 'page-admin-classes' || pageId === 'page-class-details') {
+                    activeLink = sidebarAdminClasses;
+                } else if (pageId === 'page-admin-assignments') {
+                    activeLink = sidebarAdminAssignments;
+                } else if (pageId === 'page-admin-panel') {
+                    activeLink = sidebarAdminPanel;
+                } else if (pageId === 'page-group-assignments') { // NEW
+                    activeLink = (currentRole === 'admin') ? sidebarGroupsAdmin : sidebarGroupsStudent;
+                }
+                
+                if (activeLink) {
+                    activeLink.classList.add('active');
+                }
+            }
+
+            // Sidebar navigation listeners
+            sidebarDashboard.addEventListener('click', (e) => { e.preventDefault(); showPage('page-dashboard', 'Dashboard'); });
+            sidebarProfile.addEventListener('click', (e) => { e.preventDefault(); showPage('page-profile', 'គណនីរបស់ខ្ញុំ'); });
+            
+            // Student Nav
+            sidebarMyClasses.addEventListener('click', (e) => { e.preventDefault(); showPage('page-my-classes', 'ថ្នាក់រៀនខ្ញុំ'); });
+            sidebarMyAssignments.addEventListener('click', (e) => { e.preventDefault(); showPage('page-my-assignments', 'កិច្ចការខ្ញុំ'); });
+            sidebarGroupsStudent.addEventListener('click', (e) => { e.preventDefault(); showPage('page-group-assignments', 'ការ​បែងចែក​ក្រុម'); }); // NEW
+            
+            // Admin Nav
+            sidebarAdminClasses.addEventListener('click', (e) => { e.preventDefault(); showPage('page-admin-classes', 'គ្រប់គ្រងថ្នាក់រៀន'); });
+            sidebarAdminAssignments.addEventListener('click', (e) => { e.preventDefault(); showPage('page-admin-assignments', 'គ្រប់គ្រងកិច្ចការ'); });
+            sidebarAdminPanel.addEventListener('click', (e) => { e.preventDefault(); showPage('page-admin-panel', 'Admin Panel'); });
+            sidebarGroupsAdmin.addEventListener('click', (e) => { e.preventDefault(); showPage('page-group-assignments', 'គ្រប់គ្រងក្រុម'); }); // Updated title
+
+            // Class Details Page Nav
+            if (backToAdminClassesButton) backToAdminClassesButton.addEventListener('click', () => showPage('page-admin-classes', 'គ្រប់គ្រងថ្នាក់រៀន'));
+            
+            // Auth view toggles
+            if (showSignupLink) showSignupLink.addEventListener('click', (e) => { e.preventDefault(); showAuthView('signup'); });
+            if (showSigninLink) showSigninLink.addEventListener('click', (e) => { e.preventDefault(); showAuthView('signin'); });
+
+            // --- Profile Page ---
+            function populateProfilePage(profile) {
+                if (!profileForm) return;
+                profileEmailDisplay.textContent = profile.email || 'N/A';
+                profileDisplayNameInput.value = profile.displayName || '';
+                profilePhotoUrlInput.value = profile.photoURL || '';
+            }
+
+            // --- Firebase User Management ---
+            async function getOrCreateUserProfile(user, isNewUser = false) {
+                if (!db || !user) throw new Error('Missing db or user');
+                const userRef = doc(db, `/artifacts/${appId}/public/data/users/${user.uid}`);
+                
+                let profileData;
+                const docSnap = await getDoc(userRef);
+
+                if (isNewUser || !docSnap.exists()) {
+                    const role = user.email === 'admin@edubase.com' ? 'admin' : 'student';
+                    profileData = {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'Anonymous'),
+                        photoURL: user.photoURL || '',
+                        role: role,
+                        createdAt: serverTimestamp()
+                    };
+                    await setDoc(userRef, profileData);
+                } else {
+                    profileData = docSnap.data();
+                }
+                return profileData;
+            }
+
+            async function checkUserRole(user) {
+                try {
+                    const profile = await getOrCreateUserProfile(user, false);
+                    currentRole = profile.role || 'student';
+                    currentUserProfile = profile;
+                } catch (error) {
+                    console.error("Error checking user role:", error);
+                    currentRole = 'student';
+                    showMessage('Error fetching user profile.', 'error');
+                }
+            }
+            
+            // --- Helper to format date ---
+            function formatDate(timestamp) {
+                if (timestamp && typeof timestamp.toDate === 'function') {
+                    return timestamp.toDate().toLocaleDateString('km-KH', { day: '2-digit', month: 'short', year: 'numeric' });
+                }
+                return 'N/A';
+            }
+
+            // --- Admin Functions ---
+            
+            function loadAdminStats() {
+                if (!db || currentRole !== 'admin') return;
+                
+                // Detach old listeners
+                if (usersListener) usersListener();
+                if (classesListener) classesListener();
+                if (assignmentsListener) assignmentsListener();
+
+                // User stats
+                const usersPath = `/artifacts/${appId}/public/data/users`;
+                usersListener = onSnapshot(collection(db, usersPath), (snapshot) => {
+                    if (statsTotalUsers) statsTotalUsers.textContent = snapshot.size;
+                }, (error) => console.error("Error loading user stats:", error));
+
+                // Class stats & list
+                const classesPath = `/artifacts/${appId}/public/data/classes`;
+                // REMOVED: orderBy("createdAt", "desc")
+                const classesQuery = query(collection(db, classesPath));
+                
+                adminClassListLoading.classList.remove('hidden');
+                adminNoClasses.classList.add('hidden');
+
+                classesListener = onSnapshot(classesQuery, (snapshot) => {
+                    if (statsTotalClasses) statsTotalClasses.textContent = snapshot.size;
+                    adminClassListLoading.classList.add('hidden');
+                    
+                    currentClassList = []; // Reset cache
+                    adminClassList.innerHTML = ''; // Clear table body
+
+                    if (snapshot.empty) {
+                        adminNoClasses.classList.remove('hidden');
+                        populateAssignmentClassDropdown(); // Populate with empty
+                        return;
+                    }
+
+                    adminNoClasses.classList.add('hidden');
+
+                    // FIX: Sort docs in JavaScript
+                    const sortedDocs = snapshot.docs.sort((a, b) => 
+                        (b.data().createdAt?.toMillis() || 0) - (a.data().createdAt?.toMillis() || 0)
+                    );
+
+                    sortedDocs.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const docId = docSnap.id;
+                        
+                        // Add to cache
+                        currentClassList.push({ id: docId, name: data.className });
+                        
+                        // Populate Admin Table
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-slate-50';
+                        
+                        tr.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button class="text-left font-medium text-teal-700 hover:underline class-details-link" data-id="${docId}" data-name="${data.className}">${data.className}</button>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${data.authorName || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${formatDate(data.createdAt)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button class="text-red-600 hover:text-red-900 delete-class-button" data-id="${docId}" data-name="${data.className}">លុប</button>
+                            </td>
+                        `;
+                        adminClassList.appendChild(tr);
+                    });
+                    
+                    // Add listeners to new buttons
+                    adminClassList.querySelectorAll('.class-details-link').forEach(button => {
+                            button.addEventListener('click', () => {
+                                // FIX: Use dataset.id and dataset.name
+                                showClassDetails(button.dataset.id, button.dataset.name);
+                            });
+                    });
+                    
+                    adminClassList.querySelectorAll('.delete-class-button').forEach(button => {
+                            button.addEventListener('click', () => {
+                                showConfirmationModal(
+                                    'លុបថ្នាក់រៀន?', 
+                                    `តើអ្នកពិតជាចង់លុបថ្នាក់ "${button.dataset.name}" មែនទេ? សកម្មភាពនេះមិនអាចមិនអាចទាញមកវិញបានទេ។`,
+                                    () => deleteClass(button.dataset.id) // Pass the function to call
+                                );
+                            });
+                    });
+                    
+                    // Update assignment modal dropdown
+                    populateAssignmentClassDropdown();
+
+                }, (error) => {
+                    console.error("Error loading classes:", error);
+                    adminClassListLoading.classList.add('hidden');
+                    showMessage('Error loading classes.', 'error');
+                });
+                
+                // Assignment stats
+                const assignmentsPath = `/artifacts/${appId}/public/data/assignments`;
+                assignmentsListener = onSnapshot(collection(db, assignmentsPath), (snapshot) => {
+                    if (statsTotalAssignments) statsTotalAssignments.textContent = snapshot.size;
+                }, (error) => console.error("Error loading assignment stats:", error));
+            }
+            
+            function loadAdminAssignments() {
+                if (!db || currentRole !== 'admin') return;
+                // Use a different variable for this listener if it's separate from stats
+                const assignmentsListenerForPage = onSnapshot; 
+
+                const assignmentsPath = `/artifacts/${appId}/public/data/assignments`;
+                // REMOVED: orderBy("createdAt", "desc")
+                const q = query(collection(db, assignmentsPath));
+                
+                adminAssignmentListLoading.classList.remove('hidden');
+                adminNoAssignments.classList.add('hidden');
+                
+                // Re-assign listener variable
+                if (assignmentsListener) assignmentsListener(); // Detach old one if same var used
+                assignmentsListener = onSnapshot(q, (snapshot) => {
+                    adminAssignmentListLoading.classList.add('hidden');
+                    adminAssignmentList.innerHTML = ''; // Clear table
+                    
+                    if (snapshot.empty) {
+                        adminNoAssignments.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    adminNoAssignments.classList.add('hidden');
+
+                    // FIX: Sort docs in JavaScript
+                    const sortedDocs = snapshot.docs.sort((a, b) => 
+                        (b.data().createdAt?.toMillis() || 0) - (a.data().createdAt?.toMillis() || 0)
+                    );
+
+                    sortedDocs.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const docId = docSnap.id;
+                        
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-slate-50';
+                        
+                        tr.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-slate-800">${data.title}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${data.className || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${formatDate(data.createdAt)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button class="text-red-600 hover:text-red-900 delete-assignment-button" data-id="${docId}" data-name="${data.title}">លុប</button>
+                            </td>
+                        `;
+                        adminAssignmentList.appendChild(tr);
+                    });
+                    
+                    // Add listeners
+                    adminAssignmentList.querySelectorAll('.delete-assignment-button').forEach(button => {
+                        button.addEventListener('click', () => {
+                            showConfirmationModal(
+                                'លុបកិច្ចការ?',
+                                `តើអ្នកពិតជាចង់លុបកិច្ចការ "${button.dataset.name}" មែនទេ?`,
+                                () => deleteAssignment(button.dataset.id)
+                            );
+                        });
+                    });
+                    
+                }, (error) => {
+                    console.error("Error loading assignments:", error);
+                    adminAssignmentListLoading.classList.add('hidden');
+                    showMessage('Error loading assignments.', 'error');
+                });
+            }
+            
+            async function deleteClass(id) {
+                if (!id || currentRole !== 'admin') return;
+                try {
+                    const docRef = doc(db, `/artifacts/${appId}/public/data/classes/${id}`);
+                    await deleteDoc(docRef);
+                    showMessage('បានលុបថ្នាក់រៀនដោយជោគជ័យ!', 'success');
+                    // TODO: Also delete all assignments associated with this class (or use a Cloud Function)
+                } catch (error) {
+                    console.error("Error deleting class:", error);
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            }
+            
+            async function deleteAssignment(id) {
+                if (!id || currentRole !== 'admin') return;
+                try {
+                    const docRef = doc(db, `/artifacts/${appId}/public/data/assignments/${id}`);
+                    await deleteDoc(docRef);
+                    showMessage('បានលុបកិច្ចការដោយជោគជ័យ!', 'success');
+                } catch (error) {
+                    console.error("Error deleting assignment:", error);
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            }
+            
+            function showClassDetails(classId, className) {
+                if (classDetailsName) classDetailsName.textContent = className;
+                showPage('page-class-details', `Class: ${className}`); // Changed title
+                console.log("Viewing details for class:", classId);
+                // TODO: Load student list for this class
+            }
+
+            if (addStudentForm) {
+                addStudentForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    showMessage('មុខងារ "Add Student" មិនទាន់ដំណើរការទេ។', 'error');
+                });
+            }
+
+            // --- Student Functions ---
+            
+            function loadStudentClasses() {
+                if (studentClassesListener) studentClassesListener(); // Detach
+                
+                // NOTE: This logic shows ALL classes. 
+                // A real app would query based on student enrollment.
+                const classesPath = `/artifacts/${appId}/public/data/classes`;
+                // REMOVED: orderBy("createdAt", "desc")
+                const classesQuery = query(collection(db, classesPath));
+
+                studentClassListLoading.classList.remove('hidden');
+                studentNoClasses.classList.add('hidden');
+
+                studentClassesListener = onSnapshot(classesQuery, (snapshot) => {
+                    studentClassListLoading.classList.add('hidden');
+                    studentClassList.innerHTML = '';
+
+                    if (snapshot.empty) {
+                        studentNoClasses.classList.remove('hidden');
+                        return;
+                    }
+
+                    studentNoClasses.classList.add('hidden');
+
+                    // FIX: Sort docs in JavaScript
+                    const sortedDocs = snapshot.docs.sort((a, b) => 
+                        (b.data().createdAt?.toMillis() || 0) - (a.data().createdAt?.toMillis() || 0)
+                    );
+
+                    sortedDocs.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const docId = docSnap.id; // Get doc ID
+                        const card = document.createElement('div');
+                        
+                        // ***** FIX 1: ADDED CLICKABLE CLASSES FOR STUDENTS *****
+                        card.className = 'bg-white p-5 rounded-xl shadow-lg border border-slate-200 transition hover:shadow-xl cursor-pointer';
+                        card.dataset.id = docId;
+                        card.dataset.name = data.className;
+                        
+                        card.innerHTML = `
+                            <h3 class="text-xl font-bold text-teal-700 mb-2">${data.className}</h3>
+                            <p class="text-sm text-slate-500">បង្កើតដោយ: ${data.authorName || 'Admin'}</p>
+                        `;
+
+                        // Add click listener
+                        card.addEventListener('click', () => {
+                            showClassDetails(card.dataset.id, card.dataset.name);
+                        });
+                        
+                        studentClassList.appendChild(card);
+                    });
+                }, (error) => {
+                    console.error("Error loading student classes:", error);
+                    studentClassListLoading.classList.add('hidden');
+                    showMessage('Error loading classes.', 'error');
+                });
+            }
+            
+            function loadStudentAssignments() {
+                if (studentAssignmentsListener) studentAssignmentsListener(); // Detach
+
+                // NOTE: This shows ALL assignments from ALL classes.
+                const assignmentsPath = `/artifacts/${appId}/public/data/assignments`;
+                // REMOVED: orderBy("createdAt", "desc")
+                const q = query(collection(db, assignmentsPath));
+                
+                studentAssignmentListLoading.classList.remove('hidden');
+                studentNoAssignments.classList.add('hidden');
+                
+                studentAssignmentsListener = onSnapshot(q, (snapshot) => {
+                    studentAssignmentListLoading.classList.add('hidden');
+                    studentAssignmentList.innerHTML = ''; // Clear dashboard list
+                    studentAssignmentListFullPage.innerHTML = ''; // Clear full page list
+                    
+                    if (snapshot.empty) {
+                        studentNoAssignments.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    studentNoAssignments.classList.add('hidden');
+
+                    // FIX: Sort docs in JavaScript
+                    const sortedDocs = snapshot.docs.sort((a, b) => 
+                        (b.data().createdAt?.toMillis() || 0) - (a.data().createdAt?.toMillis() || 0)
+                    );
+
+                    sortedDocs.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const docId = docSnap.id;
+                        
+                        const card = document.createElement('div');
+                        card.className = 'sticky-note p-5 rounded-lg'; // Use sticky-note style
+                        card.innerHTML = `
+                            <h4 class="text-lg font-bold text-slate-800 mb-2">${data.title}</h4>
+                            <p class="text-sm text-slate-700 mb-3">${data.description || '...'}</p>
+                            <span class="block text-xs font-medium text-teal-800 mt-3 pt-2 border-t border-yellow-400">
+                                ថ្នាក់: ${data.className || 'N/A'}
+                            </span>
+                        `;
+                        
+                        // Add to both dashboard and full page
+                        studentAssignmentList.appendChild(card);
+                        studentAssignmentListFullPage.appendChild(card.cloneNode(true));
+                    });
+                    
+                }, (error) => {
+                    console.error("Error loading student assignments:", error);
+                    studentAssignmentListLoading.classList.add('hidden');
+                    showMessage('Error loading assignments.', 'error');
+                });
+            }
+
+            // --- Announcements (Shared) ---
+            
+            function createAnnouncementElement(id, data) {
+                const li = document.createElement('li');
+                li.className = 'p-4 bg-slate-50 rounded-lg shadow-sm border border-slate-200 flex justify-between items-start';
+
+                const textDiv = document.createElement('div');
+
+                const p = document.createElement('p');
+                p.textContent = data.text;
+                p.className = 'text-slate-800';
+
+                const meta = document.createElement('span');
+                meta.className = 'text-xs text-slate-500 mt-1 block';
+                const date = formatDate(data.createdAt);
+                meta.textContent = `By ${data.authorName || 'Admin'} on ${date}`;
+
+                textDiv.appendChild(p);
+                textDiv.appendChild(meta);
+                li.appendChild(textDiv);
+
+                // This button is .admin-only, so CSS will hide it for students
+                const deleteButton = document.createElement('button');
+                deleteButton.innerHTML = '&#x1F5D1;'; // Trash icon
+                deleteButton.className = 'admin-only text-red-500 hover:text-red-700 text-lg font-bold py-1 px-2 rounded-md transition-colors ml-4 flex-shrink-0';
+                deleteButton.title = 'លុបសេចក្ដីប្រកាស';
+                deleteButton.onclick = () => {
+                    showConfirmationModal(
+                        'លុបសេចក្ដីប្រកាស?',
+                        'តើអ្នកពិតជាចង់លុបសេចក្ដីប្រកាសនេះមែនទេ?',
+                        () => deleteAnnouncement(id)
+                    );
+                };
+                li.appendChild(deleteButton);
+                
+                return li;
+            }
+
+            function loadAnnouncements() {
+                if (announcementsListener) announcementsListener();
+                const collectionPath = `/artifacts/${appId}/public/data/announcements`;
+                // REMOVED: orderBy("createdAt", "desc")
+                const q = query(collection(db, collectionPath)); // Fetch sorted
+
+                announcementsLoading.classList.remove('hidden');
+                noAnnouncements.classList.add('hidden');
+
+                announcementsListener = onSnapshot(q, (snapshot) => {
+                    announcementsLoading.classList.add('hidden');
+                    if (snapshot.empty) {
+                        noAnnouncements.classList.remove('hidden');
+                        announcementsList.innerHTML = '';
+                        return;
+                    }
+
+                    noAnnouncements.classList.add('hidden');
+                    announcementsList.innerHTML = '';
+
+                    // FIX: Sort docs in JavaScript
+                    const sortedDocs = snapshot.docs.sort((a, b) => 
+                        (b.data().createdAt?.toMillis() || 0) - (a.data().createdAt?.toMillis() || 0)
+                    );
+
+                    sortedDocs.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const docId = docSnap.id;
+                        const li = createAnnouncementElement(docId, data);
+                        announcementsList.appendChild(li);
+                    });
+                }, (error) => {
+                    console.error("Error loading announcements:", error);
+                    announcementsLoading.classList.add('hidden');
+                    showMessage('Error loading announcements.', 'error');
+                });
+            }
+
+            async function deleteAnnouncement(id) {
+                if (!id || currentRole !== 'admin') return;
+                try {
+                    const docRef = doc(db, `/artifacts/${appId}/public/data/announcements/${id}`);
+                    await deleteDoc(docRef);
+                    showMessage('បានលុបសេចក្ដីប្រកាស!', 'success');
+                } catch (error) {
+                    console.error("Error deleting announcement:", error);
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            }
+
+
+            // ***** START: NEW GROUP ASSIGNMENT FUNCTIONS *****
+
+            function clearGroupListeners() {
+                if (groupProjectsListener) groupProjectsListener();
+                groupSubListeners.forEach(listener => listener());
+                groupSubListeners = [];
+            }
+
+            // Load all "Projects"
+            function loadGroupProjects() {
+                clearGroupListeners(); // Clear all old listeners first
+                const collectionPath = `/artifacts/${appId}/public/data/groupProjects`;
+                // REMOVED: orderBy("createdAt", "desc")
+                const q = query(collection(db, collectionPath));
+
+                groupProjectsLoading.classList.remove('hidden');
+                noGroupProjects.classList.add('hidden');
+
+                groupProjectsListener = onSnapshot(q, (snapshot) => {
+                    groupProjectsLoading.classList.add('hidden');
+                    groupProjectsList.innerHTML = ''; // Clear main list
+
+                    if (snapshot.empty) {
+                        noGroupProjects.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    noGroupProjects.classList.add('hidden');
+
+                    // FIX: Sort docs in JavaScript
+                    const sortedDocs = snapshot.docs.sort((a, b) => 
+                        (b.data().createdAt?.toMillis() || 0) - (a.data().createdAt?.toMillis() || 0)
+                    );
+
+                    sortedDocs.forEach(docSnap => {
+                        const project = docSnap.data();
+                        const projectId = docSnap.id;
+                        
+                        const projectCard = document.createElement('div');
+                        projectCard.className = 'bg-white p-6 rounded-xl shadow-lg border border-slate-200';
+                        projectCard.innerHTML = `
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-2xl font-bold text-teal-800">${project.projectName}</h3>
+                                <button class="admin-only text-red-600 hover:text-red-900 font-semibold delete-project-button" data-id="${projectId}" data-name="${project.projectName}">
+                                    &#x1F5D1; លុបគម្រោង
+                                </button>
+                            </div>
+                            <div id="groups-container-${projectId}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <!-- Groups load here -->
+                            </div>
+                            <button class="admin-only mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 create-group-button" data-id="${projectId}">
+                                + បង្កើតក្រុមថ្មី
+                            </button>
+                        `;
+                        groupProjectsList.appendChild(projectCard);
+                        
+                        // Load sub-collection of groups for this project
+                        loadGroupsForProject(projectId);
+                    });
+
+                    // Wire up new buttons
+                    wireGroupProjectButtons();
+                    // CSS handles hiding admin buttons
+
+                }, (error) => {
+                    console.error("Error loading group projects:", error);
+                    groupProjectsLoading.classList.add('hidden');
+                    showMessage('Error loading group projects.', 'error');
+                });
+            }
+
+            // Load all "Groups" for a specific "Project"
+            function loadGroupsForProject(projectId) {
+                const groupsContainer = document.getElementById(`groups-container-${projectId}`);
+                if (!groupsContainer) return;
+
+                const collectionPath = `/artifacts/${appId}/public/data/groupProjects/${projectId}/groups`;
+                const q = query(collection(db, collectionPath)); // Order by name?
+
+                const listener = onSnapshot(q, (snapshot) => {
+                    groupsContainer.innerHTML = ''; // Clear groups
+                    
+                    if (snapshot.empty) {
+                        groupsContainer.innerHTML = '<p class="text-slate-500 text-sm">មិនទាន់មានក្រុម។</p>';
+                    }
+                    
+                    snapshot.docs.forEach(docSnap => {
+                        const group = docSnap.data();
+                        const groupId = docSnap.id;
+                        const members = group.members || [];
+                        
+                        // ***** FIX 2: Check if current user is in this group *****
+                        const isMember = currentUserProfile && members.includes(currentUserProfile.displayName);
+
+                        const groupCard = document.createElement('div');
+                        groupCard.className = 'bg-slate-50 p-4 rounded-lg shadow-md border';
+                        
+                        // Create member list HTML
+                        let membersHTML = '<ul class="space-y-2 mt-3 text-sm">';
+                        if (members.length > 0) {
+                            members.forEach(member => {
+                                // ***** FIX 2: Add "Leave" button for self, "Delete" button for admin *****
+                                let deleteButtonHTML = '';
+                                if (currentUserProfile && member === currentUserProfile.displayName) {
+                                    // User sees "Leave" button for themselves (not admin-only)
+                                    deleteButtonHTML = `
+                                        <button class="text-red-500 hover:text-red-700 text-xs font-semibold leave-group-button" 
+                                                data-project-id="${projectId}" 
+                                                data-group-id="${groupId}" 
+                                                data-member-name="${member}">ចាកចេញ</button>
+                                    `;
+                                } else {
+                                    // Admin sees "Delete" button for other members (admin-only)
+                                    deleteButtonHTML = `
+                                        <button class="admin-only text-red-500 hover:text-red-700 text-xs delete-member-button" 
+                                                data-project-id="${projectId}" 
+                                                data-group-id="${groupId}" 
+                                                data-member-name="${member}">&#x2716;</button>
+                                    `;
+                                }
+
+                                membersHTML += `
+                                    <li class="flex justify-between items-center">
+                                        <span class="font-medium">${member}</span>
+                                        ${deleteButtonHTML}
+                                    </li>
+                                `;
+                            });
+                        } else {
+                            membersHTML += '<li class="text-slate-400 italic">មិនទាន់មានសមាជិក</li>';
+                        }
+                        membersHTML += '</ul>';
+
+                        // ***** FIX 2: Create buttons for Student and Admin *****
+                        let actionButtonsHTML = '';
+                        
+                        // Button 1: "Join Group" (for Students only, if not already a member)
+                        if (currentRole === 'student' && !isMember) {
+                            actionButtonsHTML += `
+                                <button class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-1.5 px-3 rounded-lg shadow text-sm join-group-button" 
+                                        data-project-id="${projectId}" 
+                                        data-group-id="${groupId}">
+                                    ចូលរួមក្រុម (Join)
+                                </button>
+                            `;
+                        }
+                        
+                        // Button 2: "Add Member" (for Admins only)
+                        actionButtonsHTML += `
+                            <button class="admin-only mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1.5 px-3 rounded-lg shadow text-sm add-member-button" 
+                                    data-project-id="${projectId}" 
+                                    data-group-id="${groupId}">
+                                + បន្ថែមសមាជិក (Admin)
+                            </button>
+                        `;
+
+                        
+                        // Full card HTML
+                        groupCard.innerHTML = `
+                            <div class="flex justify-between items-center border-b border-slate-300 pb-2">
+                                <h4 class="text-lg font-semibold text-slate-800">${group.groupName}</h4>
+                                <button class="admin-only text-red-500 hover:text-red-700 text-xs font-semibold delete-group-button" 
+                                        data-project-id="${projectId}" 
+                                        data-group-id="${groupId}" 
+                                        data-name="${group.groupName}">លុបក្រុម</button>
+                            </div>
+                            ${membersHTML}
+                            <div class="mt-2 space-y-2">
+                                ${actionButtonsHTML}
+                            </div>
+                        `;
+                        groupsContainer.appendChild(groupCard);
+                    });
+
+                    // Wire up new buttons
+                    wireGroupProjectButtons();
+                    // CSS handles hiding admin buttons
+
+                }, (error) => {
+                    console.error(`Error loading groups for project ${projectId}:`, error);
+                    groupsContainer.innerHTML = '<p class="text-red-500">Error loading groups.</p>';
+                });
+                
+                // Add this new listener to the array so we can detach it on logout
+                groupSubListeners.push(listener);
+            }
+
+            // Helper to wire all buttons on the group page (must be re-run after render)
+            function wireGroupProjectButtons() {
+                // Delete Project (Admin only)
+                document.querySelectorAll('.delete-project-button').forEach(button => {
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        const { id, name } = e.currentTarget.dataset;
+                        showConfirmationModal(
+                            'លុបគម្រោង?',
+                            `តើអ្នកពិតជាចង់លុបគម្រោង "${name}" មែនទេ? (ក្រុមទាំងអស់នឹងត្រូវលុប)`,
+                            () => deleteGroupProject(id)
+                        );
+                    };
+                });
+
+                // Create Group (Admin only)
+                document.querySelectorAll('.create-group-button').forEach(button => {
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        projectIdForGroup.value = e.currentTarget.dataset.id;
+                        createGroupForm.reset();
+                        createGroupModal.classList.remove('hidden');
+                    };
+                });
+
+                // Delete Group (Admin only)
+                document.querySelectorAll('.delete-group-button').forEach(button => {
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        const { projectId, groupId, name } = e.currentTarget.dataset;
+                        showConfirmationModal(
+                            'លុបក្រុម?',
+                            `តើអ្នកពិតជាចង់លុប "${name}"?`,
+                            () => deleteGroup(projectId, groupId)
+                        );
+                    };
+                });
+
+                // Add Member (Admin only)
+                document.querySelectorAll('.add-member-button').forEach(button => {
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        const { projectId, groupId } = e.currentTarget.dataset;
+                        projectIdForMember.value = projectId;
+                        groupIdForMember.value = groupId;
+                        addMemberForm.reset();
+                        addMemberModal.classList.remove('hidden');
+                    };
+                });
+
+                // Delete Member (Admin only)
+                document.querySelectorAll('.delete-member-button').forEach(button => {
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        const { projectId, groupId, memberName } = e.currentTarget.dataset;
+                        showConfirmationModal(
+                            'លុបសមាជិក (Admin)?',
+                            `តើអ្នកពិតជាចង់លុប "${memberName}"?`,
+                            () => deleteMember(projectId, groupId, memberName)
+                        );
+                    };
+                });
+
+                // ***** FIX 2: Wire up NEW buttons *****
+
+                // Join Group (Student only)
+                document.querySelectorAll('.join-group-button').forEach(button => {
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        const { projectId, groupId } = e.currentTarget.dataset;
+                        joinGroup(projectId, groupId); // Join directly
+                    };
+                });
+
+                // Leave Group (Student only)
+                document.querySelectorAll('.leave-group-button').forEach(button => {
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        const { projectId, groupId, memberName } = e.currentTarget.dataset;
+                        showConfirmationModal(
+                            'ចាកចេញពីក្រុម?',
+                            `តើអ្នកពិតជាចង់ចាកចេញពីក្រុមនេះមែនទេ?`,
+                            () => deleteMember(projectId, groupId, memberName) // Re-use deleteMember
+                        );
+                    };
+                });
+            }
+
+            // Create Project (Form Submit)
+            createProjectForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const projectName = projectNameInput.value.trim();
+                if (!projectName || !currentUserId) return;
+                try {
+                    const collectionPath = `/artifacts/${appId}/public/data/groupProjects`;
+                    await addDoc(collection(db, collectionPath), {
+                        projectName: projectName,
+                        createdBy: currentUserId,
+                        authorName: currentUserProfile.displayName,
+                        createdAt: serverTimestamp()
+                    });
+                    showMessage('បានបង្កើតគម្រោងដោយជោគជ័យ!', 'success');
+                    createProjectForm.reset();
+                    createProjectModal.classList.add('hidden');
+                } catch (error) {
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            });
+
+            // Create Group (Form Submit)
+            createGroupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const groupName = groupNameInput.value.trim();
+                const projectId = projectIdForGroup.value;
+                if (!groupName || !projectId) return;
+                try {
+                    const collectionPath = `/artifacts/${appId}/public/data/groupProjects/${projectId}/groups`;
+                    await addDoc(collection(db, collectionPath), {
+                        groupName: groupName,
+                        members: [] // Start with empty array
+                    });
+                    showMessage('បានបង្កើតក្រុមដោយជោគជ័យ!', 'success');
+                    createGroupForm.reset();
+                    createGroupModal.classList.add('hidden');
+                } catch (error) {
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            });
+
+            // Add Member (Form Submit - Admin only)
+            addMemberForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const memberName = memberNameInput.value.trim();
+                const projectId = projectIdForMember.value;
+                const groupId = groupIdForMember.value;
+                if (!memberName || !projectId || !groupId) return;
+                try {
+                    const docRef = doc(db, `/artifacts/${appId}/public/data/groupProjects/${projectId}/groups/${groupId}`);
+                    await updateDoc(docRef, {
+                        members: arrayUnion(memberName) // Add member to array
+                    });
+                    showMessage('បានបន្ថែមសមាជិក!', 'success');
+                    addMemberForm.reset();
+                    addMemberModal.classList.add('hidden');
+                } catch (error) {
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            });
+
+            // ***** FIX 2: Create new function for Student to JOIN group *****
+            async function joinGroup(projectId, groupId) {
+                if (!projectId || !groupId || !currentUserId || !currentUserProfile?.displayName) {
+                    showMessage('Error: មិនអាចចូលរួមបានទេ។ សូម Login ម្ដងទៀត។', 'error');
+                    return;
+                }
+                const memberName = currentUserProfile.displayName;
+                try {
+                    const docRef = doc(db, `/artifacts/${appId}/public/data/groupProjects/${projectId}/groups/${groupId}`);
+                    await updateDoc(docRef, {
+                        members: arrayUnion(memberName) // Add current user's name
+                    });
+                    showMessage(`បានចូលរួមក្រុម ${memberName}!`, 'success');
+                } catch (error) {
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            }
+
+
+            // Delete Project
+            async function deleteGroupProject(projectId) {
+                if (!projectId || currentRole !== 'admin') return;
+                try {
+                    // Note: This does not delete sub-collections automatically.
+                    // A Cloud Function is needed for full cleanup.
+                    await deleteDoc(doc(db, `/artifacts/${appId}/public/data/groupProjects/${projectId}`));
+                    showMessage('បានលុបគម្រោង។', 'success');
+                } catch (error) {
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            }
+
+            // ** មុខងារសំខាន់សម្រាប់លុបក្រុមដែល Admin បានស្នើសុំ **
+            async function deleteGroup(projectId, groupId) {
+                // ត្រួតពិនិត្យថាជា Admin និងមាន IDs គ្រប់គ្រាន់
+                if (!projectId || !groupId || currentRole !== 'admin') {
+                    showMessage('អ្នកមិនមានសិទ្ធិលុបក្រុមនេះទេ។', 'error');
+                    return;
+                }
+                try {
+                    // លុបឯកសារក្រុមចេញពី sub-collection
+                    const docRef = doc(db, `/artifacts/${appId}/public/data/groupProjects/${projectId}/groups/${groupId}`);
+                    await deleteDoc(docRef);
+                    showMessage('បានលុបក្រុមដោយជោគជ័យ!', 'success');
+                } catch (error) {
+                    console.error("Error deleting group:", error);
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            }
+
+            // Delete Member (or Leave Group)
+            async function deleteMember(projectId, groupId, memberName) {
+                if (!projectId || !groupId || !memberName) return;
+
+                // ***** FIX 2: Updated permission check *****
+                // Allow if:
+                // 1. User is admin
+                // 2. User is deleting themselves
+                if (currentRole !== 'admin' && ( !currentUserProfile || memberName !== currentUserProfile.displayName) ) {
+                    showMessage('អ្នកមិនមានសិទ្ធិលុបសមាជិកនេះទេ។', 'error');
+                    return;
+                }
+
+                try {
+                    const docRef = doc(db, `/artifacts/${appId}/public/data/groupProjects/${projectId}/groups/${groupId}`);
+                    await updateDoc(docRef, {
+                        members: arrayRemove(memberName) // Remove member from array
+                    });
+                    
+                    if (currentRole === 'admin') {
+                        showMessage('បានលុបសមាជិក (Admin)។', 'success');
+                    } else {
+                        showMessage('បានចាកចេញពីក្រុម។', 'success');
+                    }
+
+                } catch (error) {
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            }
+            
+            // NEW: Group Modal Button Listeners
+            actionCreateProject.addEventListener('click', () => createProjectModal.classList.remove('hidden'));
+            cancelCreateProject.addEventListener('click', () => createProjectModal.classList.add('hidden'));
+            cancelCreateGroup.addEventListener('click', () => createGroupModal.classList.add('hidden'));
+            cancelAddMember.addEventListener('click', () => addMemberModal.classList.add('hidden'));
+
+            // ***** END: NEW GROUP ASSIGNMENT FUNCTIONS *****
+
+
+            // --- Modal & Form Event Listeners ---
+
+            // Auth forms
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = loginEmailInput.value;
+                    const password = loginPasswordInput.value;
+                    try {
+                        await setPersistence(auth, browserLocalPersistence);
+                        await signInWithEmailAndPassword(auth, email, password);
+                        showMessage('Login successful!', 'success');
+                        loginForm.reset();
+                    } catch (error) {
+                        console.error("Login Error:", error);
+                        showMessage(error.message, 'error');
+                    }
+                });
+            }
+
+            if (signUpForm) {
+                signUpForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = signupEmailInput.value;
+                    const password = signupPasswordInput.value;
+                    const confirmPassword = signupConfirmPasswordInput.value;
+                    if (password !== confirmPassword) {
+                        showMessage('Passwords do not match!', 'error');
+                        return;
+                    }
+                    try {
+                        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        await getOrCreateUserProfile(userCredential.user, true); // Create profile on sign up
+                        showMessage('Sign up successful! Logging in...', 'success');
+                        signUpForm.reset();
+                    } catch (error) {
+                        console.error("Sign Up Error:", error);
+                        showMessage(error.message, 'error');
+                    }
+                });
+            }
+
+            if (googleLoginButton) {
+                googleLoginButton.addEventListener('click', async () => {
+                    const provider = new GoogleAuthProvider();
+                    try {
+                        await setPersistence(auth, browserLocalPersistence);
+                        const result = await signInWithPopup(auth, provider);
+                        // Check if user is new to create profile
+                        const docSnap = await getDoc(doc(db, `/artifacts/${appId}/public/data/users/${result.user.uid}`));
+                        const isNew = !docSnap.exists();
+                        await getOrCreateUserProfile(result.user, isNew);
+                        
+                        showMessage('Google Sign-In successful!', 'success');
+                    } catch (error) {
+                        console.error("Google Login Error:", error);
+                        showMessage(error.message, 'error');
+                    }
+                });
+            }
+
+            if (logoutButton) {
+                logoutButton.addEventListener('click', async () => {
+                    try {
+                        await signOut(auth);
+                        showMessage('Logged out successfully.', 'success');
+                    } catch (error) {
+                        console.error("Logout Error:", error);
+                        showMessage(error.message, 'error');
+                    }
+                });
+            }
+
+            // Profile form
+            if (profileForm) {
+                profileForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const newDisplayName = profileDisplayNameInput.value.trim();
+                    const newPhotoURL = profilePhotoUrlInput.value.trim();
+                    if (!currentUserId) return;
+                    try {
+                        // Update Auth profile
+                        await updateProfile(auth.currentUser, {
+                            displayName: newDisplayName,
+                            photoURL: newPhotoURL
+                        });
+
+                        // Update Firestore profile
+                        const userRef = doc(db, `/artifacts/${appId}/public/data/users/${currentUserId}`);
+                        await setDoc(userRef, {
+                            displayName: newDisplayName,
+                            photoURL: newPhotoURL
+                        }, { merge: true });
+
+                        showMessage('Profile updated successfully!', 'success');
+                        // Update local profile object and UI
+                        currentUserProfile.displayName = newDisplayName;
+                        currentUserProfile.photoURL = newPhotoURL;
+                        userDisplayName.textContent = newDisplayName;
+                        userAvatar.src = newPhotoURL || `https://placehold.co/40x40/cbd5e1/7f8ea3?text=${currentUserProfile.email ? currentUserProfile.email[0].toUpperCase() : 'U'}`;
+                    } catch (error) {
+                        console.error("Profile Update Error:", error);
+                        showMessage(`Error updating profile: ${error.message}`, 'error');
+                    }
+                });
+            }
+
+            // Create Class modal
+            function openCreateClassModal() {
+                createClassForm.reset();
+                createClassModal.classList.remove('hidden');
+            }
+            actionCreateClass.addEventListener('click', openCreateClassModal);
+            actionCreateClassPage.addEventListener('click', openCreateClassModal);
+            cancelCreateClassButton.addEventListener('click', () => createClassModal.classList.add('hidden'));
+
+            createClassForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const className = classNameInput.value.trim();
+                if (!className || !currentUserId || currentRole !== 'admin') {
+                    showMessage('Invalid class name or permissions.', 'error');
+                    return;
+                }
+                try {
+                    const collectionPath = `/artifacts/${appId}/public/data/classes`;
+                    await addDoc(collection(db, collectionPath), {
+                        className: className,
+                        createdBy: currentUserId,
+                        authorName: currentUserProfile.displayName || currentUserProfile.email,
+                        createdAt: serverTimestamp()
+                    });
+                    showMessage('Class created successfully!', 'success');
+                    createClassForm.reset();
+                    createClassModal.classList.add('hidden');
+                } catch (error) {
+                    console.error("Error creating class:", error);
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            });
+            
+            // Create Assignment modal
+            function populateAssignmentClassDropdown() {
+                assignmentClassSelect.innerHTML = ''; // Clear
+                if (currentClassList.length === 0) {
+                    assignmentClassSelect.innerHTML = '<option value="">-- សូមបង្កើតថ្នាក់រៀនសិន --</option>';
+                    assignmentClassSelect.disabled = true;
+                } else {
+                    assignmentClassSelect.disabled = false;
+                    assignmentClassSelect.innerHTML = '<option value="">-- ជ្រើសរើសថ្នាក់រៀន --</option>';
+                    currentClassList.forEach(cls => {
+                        const option = document.createElement('option');
+                        option.value = cls.id;
+                        option.textContent = cls.name;
+                        option.dataset.name = cls.name; // Store name
+                        assignmentClassSelect.appendChild(option);
+                    });
+                }
+            }
+            
+            function openCreateAssignmentModal() {
+                createAssignmentForm.reset();
+                populateAssignmentClassDropdown(); // Ensure dropdown is fresh
+                createAssignmentModal.classList.remove('hidden');
+            }
+            actionCreateAssignment.addEventListener('click', openCreateAssignmentModal);
+            actionCreateAssignmentPage.addEventListener('click', openCreateAssignmentModal);
+            cancelCreateAssignment.addEventListener('click', () => createAssignmentModal.classList.add('hidden'));
+            
+            createAssignmentForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = assignmentTitleInput.value.trim();
+                const description = assignmentDescInput.value.trim();
+                const classId = assignmentClassSelect.value;
+                const selectedOption = assignmentClassSelect.options[assignmentClassSelect.selectedIndex];
+                const className = selectedOption ? selectedOption.dataset.name : 'N/A';
+                
+                if (!title || !classId) {
+                    showMessage('សូមបំពេញចំណងជើង និងជ្រើសរើសថ្នាក់រៀន។', 'error');
+                    return;
+                }
+                if (currentRole !== 'admin') {
+                    showMessage('You do not have permission.', 'error');
+                    return;
+                }
+                
+                try {
+                    // We use a root collection for assignments for easier querying
+                    const collectionPath = `/artifacts/${appId}/public/data/assignments`;
+                    await addDoc(collection(db, collectionPath), {
+                        title: title,
+                        description: description,
+                        classId: classId,
+                        className: className, // Denormalized name for easy display
+                        createdBy: currentUserId,
+                        authorName: currentUserProfile.displayName || currentUserProfile.email,
+                        createdAt: serverTimestamp()
+                    });
+                    showMessage('Assignment created successfully!', 'success');
+                    createAssignmentForm.reset();
+                    createAssignmentModal.classList.add('hidden');
+                } catch (error) {
+                    console.error("Error creating assignment:", error);
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            });
+
+            // Other quick actions
+            if (actionCreateUser) actionCreateUser.addEventListener('click', () => showMessage('មុខងារ "Create User" មិនទាន់បានបន្ថែមទេ។', 'error'));
+
+
+            // Create Announcement form
+            if (createAnnouncementForm) {
+                createAnnouncementForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    if (!currentUserId || currentRole !== 'admin') return;
+                    const text = announcementTextInput.value.trim();
+                    if (!text) {
+                        showMessage('សូមវាយសេចក្ដីប្រកាស។', 'error');
+                        return;
+                    }
+                    try {
+                        const collectionPath = `/artifacts/${appId}/public/data/announcements`;
+                        await addDoc(collection(db, collectionPath), {
+                            text: text,
+                            authorId: currentUserId,
+                            authorName: currentUserProfile.displayName || currentUserProfile.email,
+                            createdAt: serverTimestamp()
+                        });
+                        showMessage('បង្ហោះសេចក្ដីប្រកាសដោយជោគជ័យ!', 'success');
+                        createAnnouncementForm.reset();
+                    } catch (error) {
+                        console.error("Error creating announcement:", error);
+                        showMessage(`Error: ${error.message}`, 'error');
+                    }
+                });
+            }
+            
+            // --- Auth State Listener (The Main Controller) ---
+            
+            async function handleLogin(user) {
+                currentUserId = user.uid;
+                // Immediately try to get profile
+                await checkUserRole(user); 
+
+                // Add body class for admin-only CSS visibility control
+                document.body.classList.remove('admin');
+                if (currentRole === 'admin') {
+                    document.body.classList.add('admin');
+                }
+
+                // Update UI with profile data
+                userDisplayName.textContent = currentUserProfile.displayName || currentUserProfile.email;
+                userDisplayName.title = currentUserProfile.email || 'No email';
+                userAvatar.src = currentUserProfile.photoURL || `https://placehold.co/40x40/cbd5e1/7f8ea3?text=${currentUserProfile.email ? currentUserProfile.email[0].toUpperCase() : 'U'}`;
+                
+                mainContent.classList.remove('hidden');
+                loginScreen.classList.add('hidden');
+
+                // Role-based UI switching
+                if (currentRole === 'admin') {
+                    studentNavLinks.classList.add('hidden');
+                    adminNavLinks.classList.remove('hidden');
+                    adminDashboardView.classList.remove('hidden');
+                    studentDashboardView.classList.add('hidden');
+                    
+                    // Load all admin data
+                    loadAdminStats(); // This also loads classes
+                    loadAdminAssignments();
+
+                } else { // Student
+                    studentNavLinks.classList.remove('hidden');
+                    adminNavLinks.classList.add('hidden');
+                    adminDashboardView.classList.add('hidden');
+                    studentDashboardView.classList.remove('hidden');
+                    
+                    // Load student data
+                    loadStudentClasses();
+                    loadStudentAssignments();
+                }
+
+                loadAnnouncements(); // Shared
+                loadGroupProjects(); // NEW: Shared
+                populateProfilePage(currentUserProfile);
+                showPage('page-dashboard', 'Dashboard'); // Default page
+            }
+            
+            function handleLogout() {
+                currentUserId = null;
+                currentUserProfile = null;
+                currentRole = 'student';
+                currentClassList = [];
+                document.body.classList.remove('admin'); // Remove admin class
+
+                mainContent.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+
+                // Detach all listeners
+                if (announcementsListener) announcementsListener();
+                if (usersListener) usersListener();
+                if (classesListener) classesListener();
+                if (assignmentsListener) assignmentsListener();
+                if (studentClassesListener) studentClassesListener();
+                if (studentAssignmentsListener) studentAssignmentsListener();
+                clearGroupListeners(); // NEW: Detach all group listeners
+
+                // Clear all dynamic content
+                announcementsList.innerHTML = '';
+                adminClassList.innerHTML = '';
+                adminAssignmentList.innerHTML = '';
+                studentClassList.innerHTML = '';
+                studentAssignmentList.innerHTML = '';
+                studentAssignmentListFullPage.innerHTML = '';
+                groupProjectsList.innerHTML = ''; // NEW
+                
+                showAuthView('signin');
+            }
+
+            // --- Initialize Auth ---
+            
+            async function initializeAuth() {
+                try {
+                    // Check for Canvas-provided token first
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        console.debug("Signing in with __initial_auth_token...");
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                        // onAuthStateChanged will handle the rest
+                    } else {
+                        // If no token, check for existing session or sign in anonymously
+                        console.debug("No __initial_auth_token. Waiting for onAuthStateChanged.");
+                    }
+                } catch (error) {
+                    console.error("Error during initial auth sign-in:", error);
+                    showMessage(`Auth Init Error: ${error.message}`, 'error');
+                    handleLogout(); // Ensure logged-out state
+                }
+            }
+            
+            // Attach the main listener
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    // User is signed in
+                    console.debug("onAuthStateChanged: User signed in:", user.uid);
+                    handleLogin(user);
+                } else {
+                    // User is signed out
+                    console.debug("onAuthStateChanged: User signed out.");
+                    handleLogout();
+                }
+            });
+            
+            // Start the auth process
+            initializeAuth();
+
+        }); // end DOMContentLoaded
+    </script>
+
+</body>
+</html>
