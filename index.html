@@ -282,7 +282,7 @@
                     <input type="hidden" id="project-id-for-member">
                     <input type="hidden" id="group-id-for-member">
                     <label for="member-name-input" class="block text-sm font-medium text-slate-700 mb-2">ឈ្មោះសមាជិក (Member Name)</label>
-                    <input type="text" id="member-name-input" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., Lao Limheang" required>
+                    <input type="text" id="member-name-input" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., សុខ ពិសិដ្ឋ" required>
                     <div class="mt-6 flex justify-end space-x-3">
                         <button type="button" id="cancel-add-member" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg shadow-sm transition duration-300">បោះបង់</button>
                         <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">បន្ថែម</button>
@@ -294,15 +294,16 @@
         <!-- ***** END: NEW MODALS FOR GROUPS ***** -->
 
 
-        <!-- 
-          SECTION 3: MAIN APPLICATION (Logged In)
-        -->
-        <main id="main-content" class="hidden">
-            <div class="flex h-screen">
-                <!-- Sidebar -->
-                <nav id="sidebar" class="w-64 bg-slate-900 text-slate-200 flex flex-col shadow-lg">
-                    <!-- Sidebar Header -->
-                    <div class="flex items-center justify-center h-20 shadow-md bg-slate-800">
+    <!-- 
+      SECTION 3: MAIN APPLICATION (Logged In)
+    -->
+    <main id="main-content" class="hidden">
+        <div class="flex h-screen">
+            <!-- Sidebar -->
+            <!-- UPDATED: Added responsive classes for mobile overlay -->
+            <nav id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-slate-200 flex flex-col shadow-lg transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out">
+                <!-- Sidebar Header -->
+                <div class="flex items-center justify-center h-20 shadow-md bg-slate-800">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-teal-500">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                         </svg>
@@ -375,17 +376,30 @@
                     </div>
                 </nav>
 
+                <!-- NEW: Sidebar overlay for mobile -->
+                <div id="sidebar-overlay" class="hidden md:hidden fixed inset-0 z-20 bg-black bg-opacity-50"></div>
+
                 <!-- Main Content Area -->
-                <div class="flex-1 flex flex-col overflow-hidden">
+                <!-- UPDATED: Added w-full for proper mobile layout -->
+                <div class="flex-1 flex flex-col overflow-hidden w-full">
                     <!-- Top Header Bar -->
-                    <header class="bg-white shadow-sm border-b border-slate-200 h-20 flex items-center justify-between px-6">
-                        <h1 id="page-title" class="text-3xl font-bold text-slate-800">Dashboard</h1>
-                         <!-- Placeholder for potential search bar or actions -->
-                         <div></div>
+                    <!-- UPDATED: Added hamburger menu and responsive padding/text size -->
+                    <header class="bg-white shadow-sm border-b border-slate-200 h-20 flex items-center justify-between px-4 md:px-6">
+                        <div class="flex items-center gap-3">
+                            <!-- NEW: Hamburger Menu Button -->
+                            <button id="hamburger-menu" class="md:hidden p-2 text-slate-600 hover:text-teal-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
+                            <h1 id="page-title" class="text-2xl md:text-3xl font-bold text-slate-800">Dashboard</h1>
+                        </div>
+                        <div><!-- Placeholder for potential search bar or actions --></div>
                     </header>
                     
                     <!-- Page Content -->
-                    <div class="flex-1 p-6 md:p-8 overflow-y-auto">
+                    <!-- UPDATED: Responsive padding -->
+                    <div class="flex-1 p-4 md:p-8 overflow-y-auto">
 
                         <!-- 
                           PAGE 1: DASHBOARD
@@ -545,8 +559,10 @@
                                         <thead class="bg-slate-50">
                                             <tr>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ឈ្មោះថ្នាក់រៀន</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">បង្កើតដោយ</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ថ្ងៃបង្កើត</th>
+                                                <!-- UPDATED: Hide on mobile -->
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider hidden md:table-cell">បង្កើតដោយ</th>
+                                                <!-- UPDATED: Hide on mobile -->
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider hidden md:table-cell">ថ្ងៃបង្កើត</th>
                                                 <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
                                             </tr>
                                         </thead>
@@ -579,8 +595,10 @@
                                         <thead class="bg-slate-50">
                                             <tr>
                                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ចំណងជើងកិច្ចការ</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">សម្រាប់ថ្នាក់</th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ថ្ងៃបង្កើត</th>
+                                                <!-- UPDATED: Hide on mobile -->
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider hidden md:table-cell">សម្រាប់ថ្នាក់</th>
+                                                <!-- UPDATED: Hide on mobile -->
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider hidden md:table-cell">ថ្ងៃបង្កើត</th>
                                                 <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
                                             </tr>
                                         </thead>
@@ -633,7 +651,7 @@
                                         Add Student
                                     </button>
                                 </form>
-                                <p class="text-sm text-slate-500 mt-4">(Note: មុខងារនេះមិនទាន់ដំណើរការពេញលេញទេ។)</p>
+                                <p id="add-student-form-message" class="text-sm text-slate-500 mt-4">(Note: មុខងារនេះមិនទាន់ដំណើរការពេញលេញទេ។)</p>
                                 
                                 <h3 class="text-xl font-bold text-slate-800 mt-8 mb-4">Students in this Class</h3>
                                 <ul id="class-student-list">
@@ -644,7 +662,8 @@
 
                         <!-- ***** START: NEW PAGE FOR GROUPS (PAGE 9) ***** -->
                         <div id="page-group-assignments" class="page-content hidden">
-                            <div class="flex justify-between items-center mb-6">
+                            <!-- UPDATED: Responsive flex layout -->
+                            <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4 md:gap-0">
                                 <h2 class="text-2xl font-bold text-slate-800">ការ​បែងចែក​ក្រុម</h2>
                                 <button id="action-create-project" class="admin-only flex items-center bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -705,7 +724,9 @@
             updateDoc, // NEW: For updating arrays
             arrayUnion, // NEW: For adding to arrays
             arrayRemove, // NEW: For removing from arrays
-            setLogLevel // Added for debugging
+            setLogLevel, // Added for debugging
+            where,    // NEW: For querying
+            getDocs   // NEW: For querying
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Config (from user, DO NOT EDIT) ---
@@ -747,6 +768,7 @@
         let currentUserProfile = null;
         let currentRole = 'student';
         let currentClassList = []; // Cache for class list
+        let currentViewingClassId = null; // NEW: To store which class admin is viewing
         
         // Firestore listeners
         let announcementsListener = null;
@@ -755,6 +777,7 @@
         let assignmentsListener = null;
         let studentClassesListener = null;
         let studentAssignmentsListener = null;
+        let classStudentsListener = null; // NEW: Listener for students in a class
         
         // NEW: Listeners for groups
         let groupProjectsListener = null; // Main listener
@@ -891,6 +914,9 @@
             const classDetailsName = document.getElementById('class-details-name');
             const backToAdminClassesButton = document.getElementById('back-to-admin-classes');
             const addStudentForm = document.getElementById('add-student-form');
+            const studentEmailInput = document.getElementById('student-email-input'); // NEW
+            const classStudentList = document.getElementById('class-student-list'); // NEW
+            const addStudentFormMessage = document.getElementById('add-student-form-message'); // NEW
 
             // ***** NEW: Group Page Elements *****
             const actionCreateProject = document.getElementById('action-create-project');
@@ -918,6 +944,11 @@
             const memberNameInput = document.getElementById('member-name-input');
             const projectIdForMember = document.getElementById('project-id-for-member');
             const groupIdForMember = document.getElementById('group-id-for-member');
+
+            // --- NEW: Responsive Elements ---
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            const hamburgerMenu = document.getElementById('hamburger-menu');
 
             // --- Utility Functions ---
             function showMessage(message, type = 'success') {
@@ -1029,6 +1060,22 @@
             // Auth view toggles
             if (showSignupLink) showSignupLink.addEventListener('click', (e) => { e.preventDefault(); showAuthView('signup'); });
             if (showSigninLink) showSigninLink.addEventListener('click', (e) => { e.preventDefault(); showAuthView('signin'); });
+
+            // --- NEW: Sidebar Toggle Listeners ---
+            function openSidebar() {
+                if (sidebar) sidebar.classList.remove('-translate-x-full');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('hidden');
+            }
+            function closeSidebar() {
+                if (sidebar) sidebar.classList.add('-translate-x-full');
+                if (sidebarOverlay) sidebarOverlay.classList.add('hidden');
+            }
+            hamburgerMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openSidebar();
+            });
+            sidebarOverlay.addEventListener('click', closeSidebar);
+
 
             // --- Profile Page ---
             function populateProfilePage(profile) {
@@ -1142,8 +1189,10 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <button class="text-left font-medium text-teal-700 hover:underline class-details-link" data-id="${docId}" data-name="${data.className}">${data.className}</button>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${data.authorName || 'N/A'}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${formatDate(data.createdAt)}</td>
+                            <!-- UPDATED: Hide on mobile -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 hidden md:table-cell">${data.authorName || 'N/A'}</td>
+                            <!-- UPDATED: Hide on mobile -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 hidden md:table-cell">${formatDate(data.createdAt)}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <button class="text-red-600 hover:text-red-900 delete-class-button" data-id="${docId}" data-name="${data.className}">លុប</button>
                             </td>
@@ -1224,8 +1273,10 @@
                         
                         tr.innerHTML = `
                             <td class="px-6 py-4 whitespace-nowrap font-medium text-slate-800">${data.title}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${data.className || 'N/A'}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${formatDate(data.createdAt)}</td>
+                            <!-- UPDATED: Hide on mobile -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 hidden md:table-cell">${data.className || 'N/A'}</td>
+                            <!-- UPDATED: Hide on mobile -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 hidden md:table-cell">${formatDate(data.createdAt)}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <button class="text-red-600 hover:text-red-900 delete-assignment-button" data-id="${docId}" data-name="${data.title}">លុប</button>
                             </td>
@@ -1278,20 +1329,146 @@
             
             function showClassDetails(classId, className) {
                 if (classDetailsName) classDetailsName.textContent = className;
+                currentViewingClassId = classId; // NEW: Store the classId
                 showPage('page-class-details', `Class: ${className}`); // Changed title
-                console.log("Viewing details for class:", classId);
-                // TODO: Load student list for this class
+                
+                // NEW: Load students for this class
+                loadStudentsForClass(classId); 
             }
 
+            // UPDATED: Replaced placeholder with full functionality
             if (addStudentForm) {
-                addStudentForm.addEventListener('submit', (e) => {
+                addStudentForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    showMessage('មុខងារ "Add Student" មិនទាន់ដំណើរការទេ។', 'error');
+                    if (!currentViewingClassId || currentRole !== 'admin') {
+                        showMessage('Error: No class selected or no permission.', 'error');
+                        return;
+                    }
+                    
+                    const email = studentEmailInput.value.trim();
+                    if (!email) {
+                        showMessage('Please enter a student email.', 'error');
+                        return;
+                    }
+
+                    try {
+                        // 1. Find user by email
+                        const usersRef = collection(db, `/artifacts/${appId}/public/data/users`);
+                        const q = query(usersRef, where("email", "==", email));
+                        const querySnapshot = await getDocs(q);
+
+                        if (querySnapshot.empty) {
+                            showMessage(`Error: No user found with email ${email}.`, 'error');
+                            return;
+                        }
+
+                        // 2. Get user data
+                        const userDoc = querySnapshot.docs[0];
+                        const userData = userDoc.data();
+                        const userId = userDoc.id;
+
+                        // 3. Add user to sub-collection
+                        const studentDocRef = doc(db, `/artifacts/${appId}/public/data/classes/${currentViewingClassId}/students/${userId}`);
+                        
+                        // Check if student is already in the class
+                        const studentDocSnap = await getDoc(studentDocRef);
+                        if (studentDocSnap.exists()) {
+                            showMessage('Student is already in this class.', 'error');
+                            return;
+                        }
+
+                        await setDoc(studentDocRef, {
+                            uid: userId,
+                            email: userData.email,
+                            displayName: userData.displayName || 'N/A',
+                            joinedAt: serverTimestamp()
+                        });
+
+                        showMessage(`Successfully added ${userData.displayName} to the class!`, 'success');
+                        studentEmailInput.value = ''; // Clear input
+
+                    } catch (error) {
+                        console.error("Error adding student:", error);
+                        showMessage(`Error: ${error.message}`, 'error');
+                    }
                 });
             }
 
             // --- Student Functions ---
             
+            // NEW: Function to load students for a specific class
+            function loadStudentsForClass(classId) {
+                if (classStudentsListener) classStudentsListener(); // Detach old listener
+
+                const studentsCollectionPath = `/artifacts/${appId}/public/data/classes/${classId}/students`;
+                const q = query(collection(db, studentsCollectionPath)); // Can order by name later if needed
+
+                if (addStudentFormMessage) addStudentFormMessage.classList.add('hidden'); // Hide the "not working" message
+                classStudentList.innerHTML = '<li class="text-slate-500">Loading students...</li>';
+
+                classStudentsListener = onSnapshot(q, (snapshot) => {
+                    if (snapshot.empty) {
+                        classStudentList.innerHTML = '<li class="text-slate-500">No students are enrolled in this class yet.</li>';
+                        return;
+                    }
+
+                    classStudentList.innerHTML = ''; // Clear list
+                    snapshot.forEach(docSnap => {
+                        const student = docSnap.data();
+                        const studentId = docSnap.id;
+                        
+                        const li = document.createElement('li');
+                        li.className = 'flex justify-between items-center p-3 hover:bg-slate-50 rounded-lg';
+                        li.innerHTML = `
+                            <div>
+                                <span class="font-medium text-slate-800">${student.displayName}</span>
+                                <span class="text-sm text-slate-500 ml-2">(${student.email})</span>
+                            </div>
+                            <button class="admin-only text-red-500 hover:text-red-700 text-xs font-semibold remove-student-button"
+                                    data-uid="${studentId}"
+                                    data-name="${student.displayName}">
+                                Remove
+                            </button>
+                        `;
+                        classStudentList.appendChild(li);
+                    });
+
+                    // Add listeners to new remove buttons
+                    classStudentList.querySelectorAll('.remove-student-button').forEach(button => {
+                        button.onclick = (e) => {
+                            const { uid, name } = e.currentTarget.dataset;
+                            showConfirmationModal(
+                                'Remove Student?',
+                                `Are you sure you want to remove ${name} from this class?`,
+                                () => deleteStudentFromClass(currentViewingClassId, uid)
+                            );
+                        };
+                    });
+
+                }, (error) => {
+                    console.error("Error loading students:", error);
+                    classStudentList.innerHTML = '<li class="text-red-500">Error loading students.</li>';
+                    showMessage('Error loading students.', 'error');
+                });
+            }
+
+            // NEW: Function to delete a student from a class
+            async function deleteStudentFromClass(classId, userId) {
+                if (!classId || !userId || currentRole !== 'admin') {
+                    showMessage('Error: Missing data or insufficient permissions.', 'error');
+                    return;
+                }
+                try {
+                    const docRef = doc(db, `/artifacts/${appId}/public/data/classes/${classId}/students/${userId}`);
+                    await deleteDoc(docRef);
+                    showMessage('Student removed successfully.', 'success');
+                } catch (error) {
+                    console.error("Error removing student:", error);
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
+            }
+
+
             function loadStudentClasses() {
                 if (studentClassesListener) studentClassesListener(); // Detach
                 
@@ -2201,6 +2378,9 @@
                 loadGroupProjects(); // NEW: Shared
                 populateProfilePage(currentUserProfile);
                 showPage('page-dashboard', 'Dashboard'); // Default page
+
+                // NEW: Close sidebar on login (for mobile)
+                closeSidebar();
             }
             
             function handleLogout() {
@@ -2220,6 +2400,7 @@
                 if (assignmentsListener) assignmentsListener();
                 if (studentClassesListener) studentClassesListener();
                 if (studentAssignmentsListener) studentAssignmentsListener();
+                if (classStudentsListener) classStudentsListener(); // NEW: Detach this listener
                 clearGroupListeners(); // NEW: Detach all group listeners
 
                 // Clear all dynamic content
