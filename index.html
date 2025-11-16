@@ -2453,6 +2453,98 @@
 
         }); // end DOMContentLoaded
     </script>
+      <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      // Hamburger Menu Logic
+      const menuButton = document.getElementById('menu-toggle');
+      const mobileMenu = document.getElementById('mobile-menu');
 
+      if (menuButton && mobileMenu) {
+        menuButton.addEventListener('click', () => {
+          mobileMenu.classList.toggle('hidden');
+        });
+      }
+
+      // Ad Banner Logic
+      const adBanner = document.getElementById('ad-banner');
+      const closeAdButton = document.getElementById('close-ad');
+      const hideAdButton = document.getElementById('hide-ad-btn');
+      const countdownTimer = document.getElementById('countdown-timer');
+
+      let countdown = 3; // 3-second duration
+      let timerInterval;
+
+      // Function to hide the ad with enhanced animation
+      function hideAd() {
+        if (!adBanner) return;
+        
+        // IMPORTANT: Clear the interval if the ad is hidden (either by user or timer)
+        clearInterval(timerInterval); 
+        
+        // Add classes to trigger animation (opacity-0, scale-95)
+        adBanner.classList.add('opacity-0', 'scale-95');
+        
+        // Wait for animation to finish (500ms, matching duration-500) then hide completely
+        setTimeout(() => {
+          adBanner.style.display = 'none';
+        }, 5000); 
+      }
+
+      // Function to start the 3-second countdown
+      function startCountdown() {
+          if (!countdownTimer || !adBanner) return;
+
+          timerInterval = setInterval(() => {
+              countdown--;
+              
+              // Update the display
+              if (countdownTimer) {
+                countdownTimer.textContent = `(${countdown}s)`;
+              }
+
+              // Check if time is up
+              if (countdown <= 0) {
+                  hideAd();
+              }
+          }, 1000); // Update every 1 second (1000ms)
+      }
+
+      // Attach event listener to the 'X' button
+      if (closeAdButton) {
+        closeAdButton.addEventListener('click', hideAd);
+      }
+      
+      // Attach event listener to the new "Hide Ads" button
+      if (hideAdButton) {
+        hideAdButton.addEventListener('click', hideAd);
+      }
+      
+      // Start the countdown immediately when the page loads
+      startCountdown();
+    });
+  </script>
+  <div id="ad-banner" class="fixed bottom-6 right-6 w-72 p-6 rounded-xl shadow-2xl z-50 transition-all duration-500 ease-out 
+                            bg-white border-2 border-indigo-400 transform origin-bottom-right">
+    <div class="flex items-start justify-between border-b pb-2 mb-3 border-indigo-100">
+      <h3 class="text-xl font-extrabold text-indigo-700">
+        Ads
+        <!-- Countdown Timer Element -->
+        <span id="countdown-timer" class="text-sm font-bold text-purple-600 ml-2">(3s)</span>
+      </h3>
+      <!-- Close Button (X) -->
+      <button id="close-ad" class="text-indigo-400 hover:text-indigo-600 p-1 rounded-full hover:bg-indigo-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-300">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    
+    <p class="text-base text-gray-700 mt-2 leading-relaxed">
+      <strong class="text-indigo-600">Website </strong> មិនទាន់រួចរាល់ 100% ទេ..
+    </p>
+
+    <!-- "Hide Ads" Button -->
+    <button id="hide-ad-btn" class="mt-4 w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-4 rounded-lg text-md font-bold shadow-lg hover:shadow-xl hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:ring-offset-2 transition-all duration-300 transform hover:scale-[1.01]">
+      Hide Ads
+    </button>
+  </div>
 </body>
 </html>
